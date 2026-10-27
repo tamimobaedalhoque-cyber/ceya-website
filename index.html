@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/lenis@1.1.13/dist/lenis.css" integrity="sha384-pAFowDtEJGvoq8dGiFmgKkO1h5cvbHkCysvXumyjfJBsi8qJwG429whEp2xanR+c" crossorigin="anonymous">
-<link rel="stylesheet" href="css/site.css?v=10">
+<link rel="stylesheet" href="css/site.css?v=14">
 </head>
 <body>
 
@@ -32,7 +32,6 @@
   <p class="hud-tc" id="hud-tc">00:00:00:00</p>
   <p class="hud-scene"><b id="hud-scene-no">Scene 01</b><span id="hud-scene-name">Open</span></p>
   <ol class="hud-meter" id="hud-meter"><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li></ol>
-  <span class="hud-cross"></span>
 </div>
 
 <header class="top">
@@ -187,15 +186,21 @@
   </section>
 
   <footer class="foot" id="foot" data-scene="08" data-name="End of reel">
-    <div class="foot-stage"><img class="foot-lockup" id="foot-lockup" src="../assets/logo/ceya-lockup-dark.svg" alt="Ceya Creative House"></div>
-    <div class="foot-bottom">
-      <p><b>Studio</b>Riyadh and Dubai</p>
-      <p><b>Talk</b><a href="mailto:hello@ceya.studio">hello@ceya.studio</a></p>
-      <p><b>Follow</b><a href="#open">Instagram</a>, <a href="#open">Vimeo</a></p>
-      <p><b>Brand</b><a href="../index.html">Brand book</a>, <a href="../toolkit.html">Toolkit</a></p>
-      <p class="foot-top"><a href="#open" data-cursor="Rewind">Back to the first frame</a></p>
+    <div class="foot-stage">
+      <div class="foot-mark" id="foot-mark" role="img" aria-label="Ceya Creative House">
+        <img class="fm fm--symbol" id="fm-symbol" src="../assets/logo/layer-symbol.svg" alt="">
+        <img class="fm fm--word" id="fm-word" src="../assets/logo/layer-wordmark-white.svg" alt="">
+        <img class="fm fm--desc" id="fm-desc" src="../assets/logo/layer-descriptor-mint.svg" alt="">
+      </div>
     </div>
-    <p class="foot-note">© 2026 Ceya Creative House. Clients, numbers and contact details are placeholders.</p>
+    <div class="foot-cols">
+      <div><span class="fc-label">Studio</span><p>Riyadh and Dubai<br>Sunday to Thursday, 9 to 6</p></div>
+      <div><span class="fc-label">Contact</span><p><a href="mailto:hello@ceya.studio">hello@ceya.studio</a><br>+966 50 000 0000</p></div>
+      <div><span class="fc-label">Follow</span><p><a href="#open">Instagram</a><br><a href="#open">Vimeo</a></p></div>
+      <div><span class="fc-label">Brand</span><p><a href="../index.html">Brand book</a><br><a href="../toolkit.html">Toolkit</a></p></div>
+      <div class="fc-back"><a href="#open" data-cursor="Rewind"><i aria-hidden="true"></i>Back to the first frame</a></div>
+    </div>
+    <p class="foot-note">© 2026 Ceya Creative House. Clients, numbers and contact details on this site are placeholders.</p>
   </footer>
 </main>
 
@@ -204,8 +209,8 @@
 <script src="https://unpkg.com/lenis@1.1.13/dist/lenis.min.js" integrity="sha384-B2WBjDzEjJpYvhmi2UyEn7rektqkf5suS6sNoyyrf0EBAwBHdkiXxIlU0V5Ru2ed" crossorigin="anonymous"></script>
 <script src="../engine.js?v=16"></script>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
-<script type="module" src="js/world.js?v=8"></script>
-<script src="js/sound.js?v=1"></script>
-<script src="js/main.js?v=14"></script>
+<script type="module" src="js/world.js?v=10"></script>
+<script src="js/sound.js?v=2"></script>
+<script src="js/main.js?v=18"></script>
 </body>
 </html>

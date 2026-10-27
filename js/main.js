@@ -60,7 +60,13 @@
   // Browsers only allow audio after a gesture, so a visitor who left sound on gets it back on their first click or key.
   if (S.wanted) { const resume = () => { if (!S.on) { S.enable(); setSoundLabel(); } window.removeEventListener("pointerdown", resume); window.removeEventListener("keydown", resume); }; window.addEventListener("pointerdown", resume); window.addEventListener("keydown", resume); }
   $("#sonic").addEventListener("click", sonic);
-  $$("a, button").forEach(el => { el.addEventListener("mouseenter", () => S.ui("hover")); if (el !== soundBtn) el.addEventListener("click", () => S.ui("click")); });
+  // Hovering plays a note from the logo's scale: higher toward the top of the screen, panned to where the element sits.
+  const pos = el => { const r = el.getBoundingClientRect(); return { x: (r.left + r.width / 2) / innerWidth, y: 1 - (r.top + r.height / 2) / innerHeight }; };
+  $$("a, button").forEach(el => {
+    el.addEventListener("mouseenter", () => { const p = pos(el); S.ui("hover", p.y * 0.7 + p.x * 0.3, p.x); });
+    if (el !== soundBtn) el.addEventListener("click", () => { const p = pos(el); S.ui("click", p.y * 0.7 + p.x * 0.3, p.x); });
+  });
+  $$(".frame").forEach((f, i) => f.addEventListener("mouseenter", () => S.ui("hover", 0.3 + i * 0.1, pos(f).x)));
 
   /* ---------- Preloader: the rings draw on while the timecode runs ---------- */
   const loaderSvg = $("#loader-rings"), tcOut = $("#loader-tc");
@@ -130,10 +136,11 @@
 
   /* ---------- Layers: each word rises out of the depth, fills with its ring colour, then flies past ---------- */
   const lyrs = $$(".lyr"), idx = $$(".layers-index li");
+  let lastLayer = -1;
   if (lyrs.length) {
     gsap.set(lyrs, { opacity: 0, scale: 0.45, filter: "blur(10px)" });
     const tl = gsap.timeline({ scrollTrigger: { trigger: ".scene--layers", start: "top top", end: "bottom bottom", scrub: 0.8,
-      onUpdate: self => { const k = Math.max(0, Math.min(lyrs.length - 1, Math.floor((self.progress * tl.duration() - 0.3) / 2))); idx.forEach((li, i) => li.classList.toggle("on", i === k)); } } });
+      onUpdate: self => { const k = Math.max(0, Math.min(lyrs.length - 1, Math.floor((self.progress * tl.duration() - 0.3) / 2))); if (k !== lastLayer && self.progress > 0.02) { lastLayer = k; S.layer(k); } idx.forEach((li, i) => li.classList.toggle("on", i === k)); } } });
     lyrs.forEach((l, i) => {
       const word = $(".lyr-word", l), body = $(".lyr-body", l);
       tl.to(l, { opacity: 1, scale: 1, filter: "blur(0px)", duration: 1, ease: "power2.out" }, i * 2)
@@ -166,7 +173,7 @@
   if (gradeBox) {
     const setX = v => gradeBox.style.setProperty("--x", `${v}%`);
     let lastStep = -1;
-    gradeRange.addEventListener("input", () => { setX(gradeRange.value); const st = Math.round(gradeRange.value / 5); if (st !== lastStep) { lastStep = st; S.ui("grade", +gradeRange.value); } });
+    gradeRange.addEventListener("input", () => { setX(gradeRange.value); const st = Math.round(gradeRange.value / 5); if (st !== lastStep) lastStep = st; S.glide(+gradeRange.value); });
     if (!reduce) {
       const sweep = { v: 50 };
       ScrollTrigger.create({ trigger: gradeBox, start: "top 70%", once: true, onEnter: () => gsap.timeline().to(sweep, { v: 18, duration: 1.1, ease: "power2.inOut", onUpdate: () => { setX(sweep.v); gradeRange.value = sweep.v; } }).to(sweep, { v: 82, duration: 1.4, ease: "power2.inOut", onUpdate: () => { setX(sweep.v); gradeRange.value = sweep.v; } }).to(sweep, { v: 50, duration: 1, ease: "power2.inOut", onUpdate: () => { setX(sweep.v); gradeRange.value = sweep.v; } }) });
@@ -196,7 +203,12 @@
     waveHost.replaceWith(svg);
     let on = false, near = 0, raf = 0;
     new IntersectionObserver(es => { on = es[0].isIntersecting; cancelAnimationFrame(raf); if (on) raf = requestAnimationFrame(loop); }).observe(svg);
-    svg.addEventListener("pointermove", e => { const r = svg.getBoundingClientRect(); const d = Math.hypot(e.clientX - (r.left + r.width / 2), e.clientY - (r.top + r.height / 2)) / (r.width / 2); near = Math.max(0, 1 - d); });
+    svg.addEventListener("pointermove", e => {
+      const r = svg.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      const d = Math.hypot(e.clientX - cx, e.clientY - cy) / (r.width / 2); near = Math.max(0, 1 - d);
+      // Distance from the centre picks the ring: the core is Mint, the outside is Sun.
+      if (d < 1) S.instrument(Math.max(0, Math.min(7, 7 - Math.floor(d * 8))), e.clientX / innerWidth);
+    });
     svg.addEventListener("pointerleave", () => { near = 0; });
     let last = 0;
     function loop(now) {
@@ -229,18 +241,36 @@
   gsap.from(".play-kicker, .cta, .play-meta", { opacity: 0, y: 30, stagger: 0.15, duration: 1, ease: EASE, scrollTrigger: { trigger: ".scene--play", start: "top 45%" } });
   $("#cta").addEventListener("click", () => { sonic(); world().flash(); });
 
-  /* ---------- Footer: the 3D symbol glides to centre, matches the master lockup, then hands over ---------- */
-  const foot = $("#foot"), footLogo = $("#foot-lockup");
-  if (foot && footLogo) {
+  /* ---------- Footer handoff ----------
+     Scroll brings the 3D symbol to the exact spot of the footer symbol and flattens it.
+     Then a timed crossfade (not tied to scroll speed) dissolves the 3D symbol into the flat one,
+     and the wordmark and descriptor rise in after it. Scrolling back reverses it. */
+  const foot = $("#foot"), mark = $("#foot-mark"), fmSym = $("#fm-symbol"), fmWord = $("#fm-word"), fmDesc = $("#fm-desc");
+  if (foot && mark) {
     const SYM_CY = (476.95 - 278.6) / 589.2, SYM_H = 384.7 / 589.2; // symbol centre and height inside the lockup artwork
-    gsap.set(footLogo, { opacity: 0 });
+    const seg = (p, a, b) => gsap.utils.clamp(0, 1, (p - a) / (b - a));
+    const ease = x => x * x * (3 - 2 * x);
+    const fx = { d: 0 };
+    gsap.set([fmSym, fmWord, fmDesc], { opacity: 0 });
+    gsap.set(fmWord, { yPercent: 5 }); gsap.set(fmDesc, { yPercent: 4 });
+    const cross = gsap.timeline({ paused: true })
+      .to(fx, { d: 1, duration: reduce ? 0.01 : 1.4, ease: "sine.inOut" }, 0)
+      .to(fmSym, { opacity: 1, duration: reduce ? 0.01 : 1.2, ease: "sine.inOut" }, 0)
+      .to(fmWord, { opacity: 1, yPercent: 0, duration: reduce ? 0.01 : 1, ease: "power2.out" }, reduce ? 0 : 0.9)
+      .to(fmDesc, { opacity: 1, yPercent: 0, duration: reduce ? 0.01 : 0.9, ease: "power2.out" }, reduce ? 0 : 1.3);
+    let shown = false, lastArgs = [0, 0, 0, 0];
+    const push = () => world().setFooter && world().setFooter(lastArgs[0], lastArgs[1], lastArgs[2], lastArgs[3], fx.d);
+    cross.eventCallback("onUpdate", push);
     ScrollTrigger.create({
       trigger: foot, start: "top bottom", end: "bottom bottom", scrub: true,
       onUpdate: self => {
-        const h = footLogo.offsetHeight, top = footLogo.getBoundingClientRect().top - foot.getBoundingClientRect().top;
-        world().setFooter && world().setFooter(self.progress, top + SYM_CY * h, SYM_H * h);
-        footLogo.style.opacity = gsap.utils.clamp(0, 1, (self.progress - 0.88) / 0.12);
-        S.setEnd(self.progress);
+        const p = self.progress, h = mark.offsetHeight;
+        // The 3D symbol tracks the flat symbol's live position, so they are exactly superimposed when they swap.
+        lastArgs = [ease(seg(p, 0, 0.6)), mark.getBoundingClientRect().top + SYM_CY * h, SYM_H * h, ease(seg(p, 0.55, 0.75))];
+        push();
+        if (p > 0.72 && !shown) { shown = true; cross.timeScale(1).play(); }
+        else if (p < 0.6 && shown) { shown = false; cross.timeScale(1.6).reverse(); }
+        S.setEnd(p);
       },
     });
   }

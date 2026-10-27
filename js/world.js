@@ -71,7 +71,7 @@ const rings = [];
 for (let i = 0; i < 8; i++) {
   const t = i / 7, R = 2.2 * 0.96 * (1 - t * 0.8), a = 0.95 * Math.pow(t, 1.6), gap = i < 2 ? 0.3 : 0;
   const color = new THREE.Color(SPECTRUM[i]);
-  const mat = new THREE.MeshPhysicalMaterial({ color, emissive: color, emissiveIntensity: 0.22, roughness: 0.22, metalness: 0.05, clearcoat: 1, clearcoatRoughness: 0.08 });
+  const mat = new THREE.MeshPhysicalMaterial({ color, emissive: color, emissiveIntensity: 0.22, roughness: 0.22, metalness: 0.05, clearcoat: 1, clearcoatRoughness: 0.08, transparent: true, opacity: 1 }); // transparent from the start so the final fade is smooth
   const mesh = new THREE.Mesh(bandGeo(ringLine(R, a, gap), gap === 0, 0.06 - 0.016 * t, 0.2, 0.03), mat);
   const spreadScale = SPREAD_SCALE * (1 + (1 - t) * 0.15) / (1 - t * 0.8);
   mesh.userData = { t, spreadZ: -i * GAP, logoZ: END_Z + t * 0.34, spreadScale, spin: (i % 2 ? -1 : 1) * (0.08 + i * 0.015) };
@@ -106,7 +106,7 @@ function resize() {
 window.addEventListener("resize", resize); resize();
 
 /* ---------- State driven by scroll ---------- */
-const state = { p: 0, target: 0, res: 0, resT: 0, sh: 0, shT: 0, vel: 0, mx: 0, my: 0, sx: 0, sy: 0, flash: 0, foot: 0, footTarget: 0, footCy: 0, footPx: 0 };
+const state = { flat: 0, flatT: 0, dis: 0, disT: 0, p: 0, target: 0, res: 0, resT: 0, sh: 0, shT: 0, vel: 0, mx: 0, my: 0, sx: 0, sy: 0, flash: 0, foot: 0, footTarget: 0, footCy: 0, footPx: 0 };
 const smooth = x => x * x * (3 - 2 * x);
 const clamp01 = x => Math.max(0, Math.min(1, x));
 window.World = {
@@ -117,7 +117,7 @@ window.World = {
   setPointer: (x, y) => { state.mx = x; state.my = y; },
   flash: () => { state.flash = 1; },
   // Footer handoff: f runs 0 to 1; cy and px are the footer symbol's centre and diameter in screen pixels.
-  setFooter: (f, cy, px) => { state.footTarget = clamp01(f); state.footCy = cy; state.footPx = px; },
+  setFooter: (f, cy, px, flat = 0, dissolve = 0) => { state.footTarget = clamp01(f); state.footCy = cy; state.footPx = px; state.flatT = clamp01(flat); state.disT = clamp01(dissolve); },
   ready: true,
 };
 
@@ -138,27 +138,30 @@ function frame() {
   camera.lookAt(state.sx * 0.4 * still, state.sy * 0.3 * still, camZ - 20);
   camera.fov += ((window.innerWidth < 700 ? 58 : 42) + Math.abs(state.vel) * 10 - camera.fov) * 0.1; camera.updateProjectionMatrix();
   state.foot += (state.footTarget - state.foot) * (reduceMotion ? 1 : 1 - Math.pow(0.002, dt));
-  const ft = smooth(clamp01(state.foot));
+  state.flat += (state.flatT - state.flat) * (reduceMotion ? 1 : 1 - Math.pow(0.002, dt));
+  state.dis = state.disT;
+  const ft = clamp01(state.foot);
   // Where the footer lockup's symbol will sit, converted from screen pixels to world units at the logo's depth.
   const dist = camZ - END_Z, ppu = window.innerHeight / (2 * dist * Math.tan((camera.fov * Math.PI) / 360));
   const fy = (window.innerHeight / 2 - state.footCy) / ppu, fs = state.footPx / ppu / (2 * 2.17);
-  const fade = smooth(clamp01((state.foot - 0.86) / 0.14));
+  const fade = clamp01(state.dis), flat = clamp01(state.flat);
   rings.forEach((m, i) => {
     const u = m.userData;
-    const z = u.spreadZ + (u.logoZ - u.spreadZ) * resolve;
+    const z = u.spreadZ + (END_Z + u.t * 0.34 * (1 - flat) - u.spreadZ) * resolve;
     const s = u.spreadScale + (1 - u.spreadScale) * resolve;
     const wide = window.innerWidth > 860, lx = wide ? 2.75 : 0, ly = wide ? 0 : 3.6, ls = wide ? 1 : 0.5;
     const rx = lx * shift, ry = ly * shift, rs = s * (1 + (ls - 1) * shift);
     m.position.set(rx + (0 - rx) * ft, ry + (fy - ry) * ft, z); m.scale.setScalar(rs + ((fs || rs) - rs) * ft);
-    m.material.transparent = fade > 0; m.material.opacity = 1 - fade; m.visible = fade < 0.999;
+    m.material.opacity = 1 - fade; m.visible = fade < 0.995;
     m.rotation.z = reduceMotion ? 0 : (1 - resolve) * Math.sin(time * u.spin + i) * 0.35;
     m.rotation.y = (1 - resolve) * 0.12 * Math.sin(time * 0.3 + i);
-    m.material.emissiveIntensity = 0.16 + 0.5 * Math.max(0, 1 - Math.abs(camZ - z - 6) / 10) * (1 - resolve) - 0.11 * resolve + state.flash * 0.35;
+    m.material.emissiveIntensity = 0.16 + 0.5 * Math.max(0, 1 - Math.abs(camZ - z - 6) / 10) * (1 - resolve) - 0.11 * resolve + state.flash * 0.35 - 0.1 * flat;
   });
   dust.rotation.z = time * 0.01; dust.material.opacity = 0.85 * (1 - resolve * 0.7);
   warm.position.set(-5, -2, camZ - 8); cool.position.set(6, 3, camZ - 14);
   scene.fog.density = 0.035 * (1 - resolve * 0.75);
-  bloom.strength = 0.34 - 0.2 * resolve + state.flash * 0.3;
+  bloom.strength = Math.max(0, 0.34 - 0.2 * resolve - 0.14 * flat + state.flash * 0.3);
+  scene.environmentIntensity = 0.55 - 0.3 * flat;
   state.flash *= 0.94; state.vel *= 0.9;
   composer.render();
   requestAnimationFrame(frame);

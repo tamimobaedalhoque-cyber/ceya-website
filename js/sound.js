@@ -35,7 +35,7 @@
     pad.out.gain.value = 0;
     pad.filter.connect(pad.out); pad.out.connect(bus);
     const drone = (f, type, g, detune = 0) => { const o = ctx.createOscillator(), v = ctx.createGain(); o.type = type; o.frequency.value = f; o.detune.value = detune; v.gain.value = g; o.connect(v); v.connect(pad.filter); o.start(); return o; };
-    drone(73.42, "sawtooth", 0.05, -6); drone(73.42, "sawtooth", 0.05, 7); drone(110, "triangle", 0.07); drone(146.83, "sine", 0.06);
+    drone(73.42, "sawtooth", 0.028, -6); drone(73.42, "sawtooth", 0.028, 7); drone(110, "triangle", 0.06); drone(146.83, "sine", 0.05); drone(36.71, "sine", 0.08);
     const lfo = ctx.createOscillator(), lg = ctx.createGain(); lfo.frequency.value = 0.07; lg.gain.value = 90; lfo.connect(lg); lg.connect(pad.filter.frequency); lfo.start();
     NOTES.forEach((f, i) => {
       const o = ctx.createOscillator(), o2 = ctx.createOscillator(), v = ctx.createGain();
@@ -48,9 +48,10 @@
   function score(p, lit, speed) {
     if (!on) return;
     const t = now();
-    pad.filter.frequency.setTargetAtTime(320 + p * 1500 + speed * 900, t, 0.25);
+    pad.filter.frequency.setTargetAtTime(260 + p * 1100 + speed * 700, t, 0.3);
+    projector(speed);
     pad.out.gain.setTargetAtTime((0.55 + p * 0.45) * pad.end, t, 0.6);
-    pad.layers.forEach((v, i) => v.gain.setTargetAtTime(i < lit ? 0.045 : 0, t, 0.9));
+    pad.layers.forEach((v, i) => v.gain.setTargetAtTime(i < lit ? 0.035 : 0, t, 0.9));
   }
 
   /* ---------- One-shot voices ---------- */
@@ -73,23 +74,84 @@
   function ring(i, dir = 1) {
     if (!on) return;
     const t = now() + 0.01;
-    noise(t, 0.9, 0.28, dir > 0 ? 300 : 3600, dir > 0 ? 3600 : 300, 0.9);
-    tone(NOTES[i], t + 0.18, 1.6, 0.11);
+    // Air rushing past, swept across the stereo field in the direction of travel.
+    const src = ctx.createBufferSource(), f = ctx.createBiquadFilter(), v = ctx.createGain(), pan = ctx.createStereoPanner();
+    src.buffer = noiseBuf; f.type = "bandpass"; f.Q.value = 0.8;
+    f.frequency.setValueAtTime(dir > 0 ? 260 : 2400, t); f.frequency.exponentialRampToValueAtTime(dir > 0 ? 2400 : 260, t + 0.85);
+    pan.pan.setValueAtTime(-0.85 * dir, t); pan.pan.linearRampToValueAtTime(0.85 * dir, t + 0.9);
+    v.gain.setValueAtTime(0, t); v.gain.linearRampToValueAtTime(0.22, t + 0.35); v.gain.exponentialRampToValueAtTime(0.0008, t + 1);
+    src.connect(f); f.connect(v); v.connect(pan); pan.connect(bus); src.start(t, Math.random()); src.stop(t + 1.05);
+    // A low body thump, then the ring's own note like a struck bell.
+    tone(NOTES[i] / 4, t + 0.2, 0.7, 0.08, "sine");
+    mallet(NOTES[i], t + 0.22, 0.12, 0, 2.2);
     if (onNote) onNote(i);
   }
 
+  /* A soft mallet: a sine with a gentle octave and a quick, rounded decay. Pan follows screen position. */
+  function mallet(f, at, gain, panX = 0, len = 0.9) {
+    const o = ctx.createOscillator(), o2 = ctx.createOscillator(), v = ctx.createGain(), v2 = ctx.createGain(), pan = ctx.createStereoPanner();
+    o.type = "sine"; o2.type = "sine"; o.frequency.value = f; o2.frequency.value = f * 4.01; v2.gain.value = 0.08; pan.pan.value = Math.max(-0.9, Math.min(0.9, panX));
+    o.connect(v); o2.connect(v2); v2.connect(v); v.connect(pan); pan.connect(bus);
+    v.gain.setValueAtTime(0, at); v.gain.linearRampToValueAtTime(gain, at + 0.006); v.gain.exponentialRampToValueAtTime(0.0006, at + len);
+    o.start(at); o2.start(at); o.stop(at + len + 0.05); o2.stop(at + len + 0.05);
+  }
+  const SCALE = [146.83, 164.81, 185, 220, 246.94, 293.66, 329.63, 369.99, 440, 493.88, 587.33, 659.25, 739.99, 880]; // D major pentatonic-ish, low to high
+  const noteFor = x => SCALE[Math.max(0, Math.min(SCALE.length - 1, Math.round(x * (SCALE.length - 1))))];
+
+  /* Film-projector ticks while the page is moving: faster scroll, faster ticks. */
+  let projT = 0, projRate = 0;
+  function projector(speed) {
+    projRate = speed;
+    if (projT || !on) return;
+    const tickLoop = () => {
+      if (!on || projRate < 0.04) { projT = 0; return; }
+      noise(now(), 0.025, 0.05 * Math.min(1, projRate * 1.5), 2600, 1800, 4, "bandpass");
+      projT = setTimeout(tickLoop, 1000 / (8 + projRate * 16));
+    };
+    projT = setTimeout(tickLoop, 0);
+  }
+
   /* ---------- Interface ---------- */
-  function ui(kind, value = 0) {
+  // x: the element's horizontal position across the screen, 0 to 1. It picks the note and the stereo position.
+  function ui(kind, value = 0, x = 0.5) {
     if (!on) return;
     const t = now();
-    if (kind === "hover") { if (t - lastTick < 0.05) return; lastTick = t; tone(1760, t, 0.06, 0.025, "sine"); }
-    else if (kind === "click") { tone(587.33, t, 0.35, 0.08, "triangle"); tone(880, t + 0.03, 0.3, 0.04); }
-    else if (kind === "slate") { noise(t, 0.05, 0.12, 4000, 2500, 3, "highpass"); tone(1318.5, t, 0.08, 0.03); }
-    else if (kind === "open") { noise(t, 0.7, 0.18, 400, 2800, 0.8); [293.66, 440, 587.33].forEach((f, k) => tone(f, t + 0.1 + k * 0.06, 1.2, 0.05)); }
-    else if (kind === "close") { noise(t, 0.6, 0.15, 2800, 400, 0.8); tone(293.66, t + 0.15, 0.8, 0.05); }
-    else if (kind === "grade") { tone(800 + value * 8, t, 0.04, 0.02, "square"); }
-    else if (kind === "rec") { noise(t, 0.08, 0.2, 3000, 1500, 2, "highpass"); tone(1046.5, t + 0.08, 0.12, 0.05); tone(1046.5, t + 0.26, 0.12, 0.05); }
+    if (kind === "hover") { if (t - lastTick < 0.045) return; lastTick = t; mallet(noteFor(value), t, 0.05, x * 1.6 - 0.8, 0.5); }
+    else if (kind === "click") { mallet(noteFor(value), t, 0.09, x * 1.6 - 0.8, 1.2); mallet(noteFor(value) * 1.5, t + 0.05, 0.05, x * 1.6 - 0.8, 1.2); }
+    else if (kind === "slate") { noise(t, 0.04, 0.09, 4200, 2600, 3, "highpass"); mallet(1318.5, t, 0.02, 0, 0.2); }
+    else if (kind === "open") { noise(t, 0.7, 0.14, 300, 2600, 0.8); [293.66, 440, 587.33, 739.99].forEach((f, k) => mallet(f, t + 0.08 + k * 0.07, 0.06, -0.6 + k * 0.4, 1.4)); }
+    else if (kind === "close") { noise(t, 0.55, 0.12, 2600, 300, 0.8); [587.33, 440, 293.66].forEach((f, k) => mallet(f, t + 0.06 + k * 0.06, 0.05, 0.6 - k * 0.6, 1)); }
+    else if (kind === "rec") { noise(t, 0.08, 0.16, 3000, 1500, 2, "highpass"); mallet(1046.5, t + 0.08, 0.05, 0, 0.2); mallet(1046.5, t + 0.26, 0.05, 0, 0.2); }
   }
+  /* Each service layer arrives with its ring's chord. */
+  function layer(i) {
+    if (!on) return;
+    const ringIdx = [0, 3, 4, 7][i] ?? 0, f = NOTES[ringIdx], t = now();
+    [f / 2, f * 0.75, f].forEach((n, k) => mallet(n, t + k * 0.05, 0.06, -0.4 + k * 0.4, 2.4));
+  }
+  /* Dragging the grade: a tone that glides with the handle, from cool and low to warm and high. */
+  let glideO = null, glideV = null, glideT = 0;
+  function glide(v) {
+    if (!on) return;
+    const t = now(), f = 196 * Math.pow(2, (v / 100) * 1.6);
+    if (!glideO) {
+      glideO = ctx.createOscillator(); glideO.type = "sine"; glideV = ctx.createGain(); glideV.gain.value = 0;
+      const o2 = ctx.createOscillator(); o2.type = "triangle"; o2.frequency.value = f * 2; const g2 = ctx.createGain(); g2.gain.value = 0.2;
+      glideO.connect(glideV); o2.connect(g2); g2.connect(glideV); glideV.connect(bus); glideO.start(); o2.start(); glideO._o2 = o2;
+    }
+    glideO.frequency.setTargetAtTime(f, t, 0.04); glideO._o2.frequency.setTargetAtTime(f * 2, t, 0.04);
+    glideV.gain.setTargetAtTime(0.06, t, 0.03);
+    clearTimeout(glideT); glideT = setTimeout(() => { if (glideV) glideV.gain.setTargetAtTime(0, now(), 0.15); }, 180);
+  }
+  /* The radial wave as an instrument: each ring's direction plays that ring's note. */
+  let lastPlayed = -1, lastPlayT = 0;
+  function instrument(idx, x) {
+    if (!on || idx === lastPlayed && now() - lastPlayT < 0.35) return;
+    lastPlayed = idx; lastPlayT = now();
+    mallet(NOTES[idx], now(), 0.08, x * 1.6 - 0.8, 1.8);
+    if (onNote) onNote(idx);
+  }
+
   /* Dragging the film strip: tape-scrub noise that follows the drag speed. */
   function buildScrub() {
     const s = ctx.createBufferSource(); s.buffer = noiseBuf; s.loop = true;
@@ -119,7 +181,7 @@
   function enable() {
     if (!ctx) build();
     if (ctx.state === "suspended") ctx.resume();
-    on = true; master.gain.setTargetAtTime(0.9, now(), 0.4);
+    on = true; master.gain.setTargetAtTime(0.75, now(), 0.4);
     try { localStorage.setItem(KEY, "on"); } catch (e) {}
     ui("rec");
   }
@@ -134,7 +196,7 @@
   window.CeyaSound = {
     get on() { return on; }, wanted,
     toggle() { if (on) disable(); else enable(); return on; },
-    enable, disable, score, ring, ui, scrub, sonic,
+    enable, disable, score, ring, ui, scrub, sonic, layer, glide, instrument,
     setEnd(f) { if (pad) { pad.end = 1 - clamp01(f) * 0.85; if (on) pad.out.gain.setTargetAtTime(0.55 * pad.end, now(), 0.4); } },
     onNote(fn) { onNote = fn; },
   };
