@@ -88,7 +88,7 @@
     .from(heroChars, { yPercent: 110, duration: 1.1, stagger: 0.022, ease: "power4.out" }, ">-0.55")
     .to(".scene--hero .reveal-up", { opacity: 1, y: 0, duration: 0.9, stagger: 0.1, ease: EASE }, ">-0.8")
     .from(".hud, .top", { opacity: 0, duration: 0.9, ease: "none" }, "<")
-    .add(() => { root.classList.remove("is-loading"); $("#loader").style.display = "none"; if (lenis) lenis.start(); ScrollTrigger.refresh(); });
+    .add(() => { root.classList.remove("is-loading"); $("#loader").style.display = "none"; if (lenis) lenis.start(); ScrollTrigger.refresh(); if (location.hash.length > 1 && $(location.hash)) setTimeout(() => scrollTo(location.hash), 200); });
   const t0 = performance.now();
   (function check() { if ((!draw.isActive() && (window.World || performance.now() - t0 > 2600)) || performance.now() - t0 > 4000) open.play(); else requestAnimationFrame(check); })();
 
@@ -169,8 +169,15 @@
     const strip = $("#strip");
     strip.addEventListener("pointerdown", e => { drag = { x: e.clientX, s: window.scrollY }; strip.setPointerCapture(e.pointerId); });
     strip.addEventListener("pointermove", e => { if (!drag) return; S.scrub((e.movementX || 0) / 40); const target = drag.s - (e.clientX - drag.x) * 2.2; if (lenis) lenis.scrollTo(target, { immediate: false, lerp: 0.2 }); else window.scrollTo(0, target); });
-    const end = () => { drag = null; }; strip.addEventListener("pointerup", end); strip.addEventListener("pointercancel", end);
-    $$(".frame").forEach(f => f.addEventListener("click", e => { if (drag && Math.abs(window.scrollY - drag.s) > 6) e.preventDefault(); }));
+    // A tap opens the film; a drag only scrubs. Pointer capture sends the release to the strip, so find the frame under it.
+    strip.addEventListener("pointerup", e => {
+      const moved = drag && Math.abs(e.clientX - drag.x) > 6; drag = null;
+      if (moved || e.button !== 0) return;
+      const f = document.elementFromPoint(e.clientX, e.clientY)?.closest(".frame");
+      if (f) { if (window.CeyaWipe) window.CeyaWipe.go(f.href, e.clientX, e.clientY); else location.href = f.href; }
+    });
+    strip.addEventListener("pointercancel", () => { drag = null; });
+    $$(".frame").forEach(f => f.addEventListener("click", e => { if (e.detail !== 0) e.preventDefault(); }));
   }
 
   /* ---------- Grade: drag to compare ---------- */
@@ -298,7 +305,11 @@
   }
   openBtn.addEventListener("click", openMenu); closeBtn.addEventListener("click", () => closeMenu());
   document.addEventListener("keydown", e => { if (e.key === "Escape" && !menu.hidden) closeMenu(); });
-  $$(".menu-list a").forEach(a => a.addEventListener("click", e => { e.preventDefault(); e.stopImmediatePropagation(); const id = a.getAttribute("href"); closeMenu(() => scrollTo(id)); }, true));
+  $$(".menu-list a").forEach(a => a.addEventListener("click", e => {
+    e.preventDefault(); e.stopImmediatePropagation(); const id = a.getAttribute("href");
+    if (id.startsWith("#")) closeMenu(() => scrollTo(id));
+    else if (window.CeyaWipe) window.CeyaWipe.go(a.href, e.clientX, e.clientY); else location.href = a.href;
+  }, true));
 
   /* ---------- Cursor: a ring that becomes a label; magnetic buttons ---------- */
   if (fine && !reduce) {

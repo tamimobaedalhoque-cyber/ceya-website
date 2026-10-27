@@ -177,6 +177,30 @@
     if (!on) setTimeout(() => { if (!on) master.gain.setTargetAtTime(0, now(), 0.4); }, (idx.length * step + 2.2) * 1000);
   }
 
+  /* ---------- A film's motif: a short phrase on the logo's notes. Plays on a click even with sound off. ---------- */
+  let phraseTimers = [];
+  function phrase(seq, step = 0.22, cb) {
+    if (!ctx) build();
+    if (ctx.state === "suspended") ctx.resume();
+    phraseTimers.forEach(clearTimeout); phraseTimers = [];
+    if (!on) master.gain.setTargetAtTime(0.9, now(), 0.05);
+    const t = now() + 0.05;
+    seq.forEach((n, k) => {
+      if (n == null) return;
+      tone(NOTES[n], t + k * step, 0.8, 0.16);
+      phraseTimers.push(setTimeout(() => { if (cb) cb(k, n); if (onNote) onNote(n); }, k * step * 1000));
+    });
+    phraseTimers.push(setTimeout(() => { if (cb) cb(-1); if (!on) master.gain.setTargetAtTime(0, now(), 0.5); }, (seq.length * step + 1.6) * 1000));
+    return seq.length * step;
+  }
+  /* ---------- Page change: the rings close with a rising breath, then open with a falling one ---------- */
+  function wipe(dir = 1) {
+    if (!on) return;
+    const t = now();
+    if (dir > 0) { noise(t, 0.75, 0.13, 260, 2400, 0.9); [293.66, 440, 587.33].forEach((f, k) => mallet(f, t + 0.1 + k * 0.09, 0.05, -0.5 + k * 0.5, 1.2)); }
+    else { noise(t, 0.8, 0.11, 2400, 280, 0.9); mallet(880, t + 0.1, 0.05, 0, 1.6); }
+  }
+
   /* ---------- On and off ---------- */
   function enable() {
     if (!ctx) build();
@@ -196,7 +220,7 @@
   window.CeyaSound = {
     get on() { return on; }, wanted,
     toggle() { if (on) disable(); else enable(); return on; },
-    enable, disable, score, ring, ui, scrub, sonic, layer, glide, instrument,
+    enable, disable, score, ring, ui, scrub, sonic, layer, glide, instrument, phrase, wipe,
     setEnd(f) { if (pad) { pad.end = 1 - clamp01(f) * 0.85; if (on) pad.out.gain.setTargetAtTime(0.55 * pad.end, now(), 0.4); } },
     onNote(fn) { onNote = fn; },
   };

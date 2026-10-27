@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en" class="is-page">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ceya, the studio</title>
+<meta name="description" content="Ceya is a creative house for film, motion and sound in Riyadh and Dubai.">
+<link rel="icon" href="../assets/logo/ceya-symbol.svg" type="image/svg+xml">
+<script>try { if (sessionStorage.getItem("ceya-wipe")) document.documentElement.classList.add("wipe-in"); } catch (e) {}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/lenis@1.1.13/dist/lenis.css" integrity="sha384-pAFowDtEJGvoq8dGiFmgKkO1h5cvbHkCysvXumyjfJBsi8qJwG429whEp2xanR+c" crossorigin="anonymous">
+<link rel="stylesheet" href="css/site.css?v=14">
+<link rel="stylesheet" href="css/pages.css?v=2">
+</head>
+<body data-page="studio">
+<canvas class="stars" id="stars" aria-hidden="true"></canvas>
+<div class="grain" aria-hidden="true"></div>
+
+<div class="hud" aria-hidden="true">
+  <span class="hud-mark hud-mark--tl"></span><span class="hud-mark hud-mark--tr"></span><span class="hud-mark hud-mark--bl"></span><span class="hud-mark hud-mark--br"></span>
+  <p class="hud-rec"><i></i>Rec</p>
+  <p class="hud-tc" id="hud-tc">00:00:00:00</p>
+  <p class="hud-scene"><b id="hud-scene-no">Studio</b><span id="hud-scene-name">Open</span></p>
+  <ol class="hud-meter" id="hud-meter"><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li></ol>
+</div>
+
+<header class="top">
+  <a class="top-logo" href="index.html" aria-label="Ceya, home"><img src="../assets/logo/ceya-symbol.svg" alt=""><img class="top-word" src="../assets/logo/ceya-wordmark-white.svg" alt="ceya"></a>
+  <button class="top-sound" id="sound" type="button" aria-pressed="false"><span class="eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span>Sound off</button>
+  <button class="top-menu" id="menu-open" type="button" aria-expanded="false" aria-controls="menu" data-cursor="Open">Menu</button>
+</header>
+
+<nav class="menu" id="menu" aria-label="Site" hidden>
+  <button class="menu-close" id="menu-close" type="button">Close</button>
+  <ol class="menu-list">
+    <li style="--c:#F7B32B"><a href="index.html"><i>01</i>Home</a></li>
+    <li style="--c:#FC864F"><a href="index.html#work"><i>02</i>Work</a></li>
+    <li style="--c:#FF6F61"><a href="studio.html"><i>03</i>Studio</a></li>
+    <li style="--c:#D7927B"><a href="index.html#process"><i>04</i>Process</a></li>
+    <li style="--c:#B0B596"><a href="index.html#sound-scene"><i>05</i>Sound</a></li>
+    <li style="--c:#88D8B0"><a href="contact.html"><i>06</i>Start a project</a></li>
+  </ol>
+  <div class="menu-foot"><img src="../assets/logo/ceya-lockup-white.svg" alt="Ceya Creative House"><p>hello@ceya.studio<br>Riyadh and Dubai</p></div>
+</nav>
+
+<div class="cursor" id="cursor" aria-hidden="true"><span class="cursor-ring"></span><span class="cursor-label" id="cursor-label"></span></div>
+
+<main id="smooth" class="page">
+  <span id="top-of-page"></span>
+
+  <section class="p-hero s-hero" data-scene="Studio" data-name="Open">
+    <p class="p-reel">The studio</p>
+    <h1 class="p-title"><span class="line" data-split>We listen longer</span><span class="line" data-split>than we talk.</span></h1>
+    <p class="s-sub">A creative house for film, motion and sound, working from two cities, one hour apart.</p>
+  </section>
+
+  <section class="s-cities" data-scene="Studio" data-name="Cities" aria-label="Our two studios">
+    <article class="s-city" data-tz="Asia/Riyadh" style="--c:#F7B32B">
+      <h2>Riyadh</h2>
+      <p class="s-clock" aria-live="off"><span class="s-time">--:--:--</span></p>
+      <p class="s-state"></p>
+      <p class="s-where">24.71° N, 46.68° E<br>King Fahd Road, Olaya</p>
+    </article>
+    <article class="s-city" data-tz="Asia/Dubai" style="--c:#88D8B0">
+      <h2>Dubai</h2>
+      <p class="s-clock" aria-live="off"><span class="s-time">--:--:--</span></p>
+      <p class="s-state"></p>
+      <p class="s-where">25.20° N, 55.27° E<br>Alserkal Avenue, Al Quoz</p>
+    </article>
+  </section>
+
+  <section class="p-log-wrap" data-scene="Studio" data-name="Belief">
+    <p class="p-log" data-words>We started Ceya because the best films we had worked on were heard before they were seen. So we built a house where sound sits at the table from the first meeting, not the last week.</p>
+  </section>
+
+  <section class="s-layers" data-scene="Studio" data-name="Layers">
+    <h2 class="p-h2">Four layers, one house</h2>
+    <ol class="s-layer-list">
+      <li style="--c:#F7B32B"><svg class="s-glyph" data-ring="0" viewBox="0 0 1000 1000" aria-hidden="true"></svg><h3>Concept</h3><p>Positioning, scripts and treatments. The idea, written down before anything is filmed.</p><ul><li>Brand films</li><li>Campaigns</li><li>Series formats</li></ul></li>
+      <li style="--c:#FC864F"><svg class="s-glyph" data-ring="3" viewBox="0 0 1000 1000" aria-hidden="true"></svg><h3>Story</h3><p>Characters, structure and pace. We write for the edit from the first day.</p><ul><li>Documentary</li><li>Scripted</li><li>Podcasts</li></ul></li>
+      <li style="--c:#FF6F61"><svg class="s-glyph" data-ring="4" viewBox="0 0 1000 1000" aria-hidden="true"></svg><h3>Image</h3><p>Direction, cinematography, motion design and the Ceya grade.</p><ul><li>Production</li><li>Motion</li><li>Colour</li></ul></li>
+      <li style="--c:#88D8B0"><svg class="s-glyph" data-ring="7" viewBox="0 0 1000 1000" aria-hidden="true"></svg><h3>Sound</h3><p>Score, sound design and mix. The layer people feel before they notice it.</p><ul><li>Original score</li><li>Sound design</li><li>Final mix</li></ul></li>
+    </ol>
+  </section>
+
+  <section class="s-crew" data-scene="Studio" data-name="Crew">
+    <h2 class="p-h2">The core crew</h2>
+    <p class="s-crew-note">Eight people, one for every ring. Each project adds the crew it needs around them.</p>
+    <ol class="s-crew-list">
+      <li style="--c:#F7B32B"><b>Lina Haddad</b><span>Founder, director</span><i>Riyadh</i></li>
+      <li style="--c:#F7B32B"><b>Omar Saleh</b><span>Executive producer</span><i>Riyadh</i></li>
+      <li style="--c:#FA9C3D"><b>Sami Rahal</b><span>Director</span><i>Dubai</i></li>
+      <li style="--c:#FC864F"><b>Dana Youssef</b><span>Lead editor</span><i>Riyadh</i></li>
+      <li style="--c:#FF6F61"><b>Nour Bitar</b><span>Director of photography</span><i>Dubai</i></li>
+      <li style="--c:#D7927B"><b>Maya Darwish</b><span>Motion director</span><i>Dubai</i></li>
+      <li style="--c:#B0B596"><b>Karim Aziz</b><span>Producer, podcasts</span><i>Riyadh</i></li>
+      <li style="--c:#88D8B0"><b>Hadi Fares</b><span>Composer, mix</span><i>Dubai</i></li>
+    </ol>
+  </section>
+
+  <section class="s-principles" data-scene="Studio" data-name="Principles">
+    <h2 class="p-h2">How we work</h2>
+    <ol class="manifesto">
+      <li>We start open.</li>
+      <li>We listen longer than we talk.</li>
+      <li>We shape in layers.</li>
+      <li>We cut until every frame earns its place.</li>
+      <li>We finish when it plays.</li>
+    </ol>
+  </section>
+
+  <section class="s-awards" data-scene="Studio" data-name="Recognition">
+    <h2 class="p-h2">Recognition</h2>
+    <ol class="s-award-list">
+      <li><i>2026</i><b>Desert light</b><span>Gold, film craft, regional advertising awards</span></li>
+      <li><i>2025</i><b>Night shoot</b><span>Official selection, six documentary festivals</span></li>
+      <li><i>2025</i><b>Night shoot</b><span>Best cinematography, regional film awards</span></li>
+      <li><i>2025</i><b>Sound of the cut</b><span>Top ten arts podcast in two countries</span></li>
+      <li><i>2024</i><b>Ceya Sound</b><span>Studio of the year, sound design, shortlist</span></li>
+    </ol>
+  </section>
+
+  <section class="s-cta" data-scene="Studio" data-name="Play">
+    <h2 class="s-cta-title">Have an idea that needs room to grow?</h2>
+    <a class="cta" href="contact.html" data-cursor="Start"><i class="cta-play"></i><span>Start a project</span></a>
+  </section>
+
+  <footer class="pfoot" data-scene="End" data-name="End of reel">
+    <a class="pfoot-mark" href="index.html" aria-label="Ceya Creative House, home"><img src="../assets/logo/layer-symbol.svg" alt=""><img src="../assets/logo/layer-wordmark-white.svg" alt=""><img src="../assets/logo/layer-descriptor-mint.svg" alt=""></a>
+    <div class="foot-cols">
+      <div><span class="fc-label">Studio</span><p>Riyadh and Dubai<br>Sunday to Thursday, 9 to 6</p></div>
+      <div><span class="fc-label">Contact</span><p><a href="mailto:hello@ceya.studio">hello@ceya.studio</a><br>+966 50 000 0000</p></div>
+      <div><span class="fc-label">Pages</span><p><a href="studio.html">Studio</a><br><a href="contact.html">Start a project</a></p></div>
+      <div><span class="fc-label">Brand</span><p><a href="../index.html">Brand book</a><br><a href="../toolkit.html">Toolkit</a></p></div>
+      <div class="fc-back"><a href="#top-of-page" data-cursor="Rewind"><i aria-hidden="true"></i>Back to the first frame</a></div>
+    </div>
+    <p class="foot-note">© 2026 Ceya Creative House. Clients, names, numbers and contact details on this site are placeholders.</p>
+  </footer>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" integrity="sha384-g4NTh/Iv5PPU4xPyhEWqPcwtNXOvdaDI8LLnyYfyNZOjKJeYQyjzQ9X5275eBjpt" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" integrity="sha384-Z3REaz79l2IaAZqJsSABtTbhjgOUYyV3p90XNnAPCSHg3EMTz1fouunq9WZRtj3d" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/lenis@1.1.13/dist/lenis.min.js" integrity="sha384-B2WBjDzEjJpYvhmi2UyEn7rektqkf5suS6sNoyyrf0EBAwBHdkiXxIlU0V5Ru2ed" crossorigin="anonymous"></script>
+<script src="../engine.js?v=16"></script>
+<script src="js/sound.js?v=3"></script>
+<script src="js/transition.js?v=5"></script>
+<script src="js/pages.js?v=4"></script>
+</body>
+</html>
