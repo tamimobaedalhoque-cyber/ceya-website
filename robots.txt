@@ -1,5 +1,5 @@
 User-agent: *
 Allow: /
-Disallow: /project.html
+Disallow: /ceya-website/project.html
 
-Sitemap: https://ceya.studio/sitemap.xml
+Sitemap: https://tamimobaedalhoque-cyber.github.io/ceya-website/sitemap.xml
