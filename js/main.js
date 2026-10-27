@@ -43,6 +43,7 @@
     lenis.on("scroll", ScrollTrigger.update);
     gsap.ticker.add(t => lenis.raf(t * 1000));
     gsap.ticker.lagSmoothing(0);
+    lenis.scrollTo(0, { immediate: true, force: true });
     lenis.stop();
   }
   const scrollTo = target => { const el = typeof target === "string" ? $(target) : target; if (!el) return; if (lenis) lenis.scrollTo(el, { duration: 1.8, easing: t => 1 - Math.pow(1 - t, 4) }); else el.scrollIntoView(); };
@@ -105,7 +106,7 @@
   /* ---------- One scroll drives the camera, timecode and meter ---------- */
   const hudTC = $("#hud-tc"), meter = $$("#hud-meter li"), sceneNo = $("#hud-scene-no"), sceneName = $("#hud-scene-name");
   ScrollTrigger.create({
-    trigger: "#smooth", start: "top top", endTrigger: "#play", end: "center center",
+    trigger: "#smooth", start: "top top", endTrigger: "#resolve", end: "top bottom",
     onUpdate: self => {
       world().setProgress(self.progress); world().setVelocity(self.getVelocity());
       hudTC.textContent = fmtTC(Math.round(self.progress * 168 * 24));
@@ -125,6 +126,13 @@
     trigger: sec, start: "top 60%", end: "bottom 40%",
     onToggle: self => gsap.to(".scrim", { opacity: self.isActive ? (sec.dataset.dim === "soft" ? 0.6 : 1) : 0, duration: 0.8, ease: "power2.out", overwrite: true }),
   }));
+
+  /* ---------- Resolve and shift: the rings close in the centre, then the logo moves beside the headline ---------- */
+  let resP = 0, shP = 0;
+  const phases = () => world().setPhases && world().setPhases(resP, shP);
+  ScrollTrigger.create({ trigger: "#resolve", start: "top bottom", end: "center center", scrub: true, onUpdate: s => { resP = s.progress; phases(); } });
+  ScrollTrigger.create({ trigger: "#play", start: "top bottom", end: "center center", scrub: true, onUpdate: s => { shP = s.progress; phases(); } });
+  gsap.from(".resolve-cap", { opacity: 0, y: 20, duration: 1, ease: EASE, scrollTrigger: { trigger: "#resolve", start: "center 70%", toggleActions: "play none none reverse" } });
 
   /* ---------- Statement: words light up as you read ---------- */
   if (statementWords.length) gsap.to(statementWords, { opacity: 1, stagger: 0.1, ease: "none", scrollTrigger: { trigger: ".scene--statement", start: "top 65%", end: "bottom 80%", scrub: true } });

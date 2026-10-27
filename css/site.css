@@ -300,3 +300,5 @@ html.no-js .reveal-up, html.reduce .reveal-up { opacity: 1; transform: none; }
 .foot-top a { color: var(--white); }
 .foot-note { margin-top: 18px; font-size: 12px; color: rgba(169,196,192,.6); }
 @media (max-width: 860px) { .foot-bottom { gap: 10px 24px; font-size: 13px; } .foot-top { margin-left: 0; } .foot-lockup { height: 30vh; transform: translateY(-6vh); } }
+.scene--resolve { min-height: 140vh; display: grid; align-items: end; justify-items: center; padding-bottom: 16vh; }
+.resolve-cap { font-size: clamp(16px, 1.3vw, 19px); color: #C5D8D5; letter-spacing: .01em; }

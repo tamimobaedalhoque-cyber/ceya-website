@@ -106,11 +106,13 @@ function resize() {
 window.addEventListener("resize", resize); resize();
 
 /* ---------- State driven by scroll ---------- */
-const state = { p: 0, target: 0, vel: 0, mx: 0, my: 0, sx: 0, sy: 0, flash: 0, foot: 0, footTarget: 0, footCy: 0, footPx: 0 };
+const state = { p: 0, target: 0, res: 0, resT: 0, sh: 0, shT: 0, vel: 0, mx: 0, my: 0, sx: 0, sy: 0, flash: 0, foot: 0, footTarget: 0, footCy: 0, footPx: 0 };
 const smooth = x => x * x * (3 - 2 * x);
 const clamp01 = x => Math.max(0, Math.min(1, x));
 window.World = {
   setProgress: p => { state.target = clamp01(p); },
+  // Phases from the page: resolve (rings close into the logo) and shift (the logo glides beside the headline).
+  setPhases: (r, s) => { state.resT = clamp01(r); state.shT = clamp01(s); },
   setVelocity: v => { state.vel = Math.max(-1, Math.min(1, v / 3000)); },
   setPointer: (x, y) => { state.mx = x; state.my = y; },
   flash: () => { state.flash = 1; },
@@ -127,7 +129,9 @@ function frame() {
   const p = state.p;
   // Phase A, 0 to 0.86: fly through the gates. Phase B, 0.86 to 1: the gates resolve into the logo.
   // The rings assemble in the centre first, then the finished logo glides to its place beside the headline.
-  const fly = clamp01(p / 0.86), resolve = smooth(clamp01((p - 0.8) / 0.14)), shift = smooth(clamp01((p - 0.95) / 0.05));
+  const k = reduceMotion ? 1 : 1 - Math.pow(0.002, dt);
+  state.res += (state.resT - state.res) * k; state.sh += (state.shT - state.sh) * k;
+  const fly = clamp01(p), resolve = smooth(state.res), shift = smooth(state.sh);
   const camZ = 12 + (END_Z + 13 - 12) * fly;
   const still = 1 - resolve * 0.6 - 0.4 * smooth(clamp01(state.foot));
   camera.position.set(state.sx * 1.2 * still, state.sy * 0.8 * still, camZ);
