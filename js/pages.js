@@ -22,11 +22,12 @@
   const REEL = window.CeyaReel || [];
   let film = null;
   if (page === "project" && REEL.length) {
-    const slug = new URLSearchParams(location.search).get("p");
+    // Built film pages carry their slug; the title and words are already in the HTML for search engines.
+    const baked = document.body.dataset.film, slug = baked || new URLSearchParams(location.search).get("p");
     const idx = Math.max(0, REEL.findIndex(f => f.slug === slug));
     film = REEL[idx];
     const next = REEL[(idx + 1) % REEL.length];
-    document.title = `${film.title}, a Ceya film`;
+    if (!baked) document.title = `${film.title} | Ceya`;
     root.style.setProperty("--fa", film.a); root.style.setProperty("--fb", film.b);
     $("#p-reel").textContent = `Reel ${pad(idx + 1)} of ${pad(REEL.length)}, ${film.format.toLowerCase()}`;
     const t = $("#p-title"); t.textContent = "";
@@ -57,7 +58,7 @@
     $("#p-notes").innerHTML = film.motif.map((n, k) => n == null ? `<li class="rest" aria-label="Rest"></li>` : `<li style="--h:${0.3 + n * 0.1};--c:${SPECTRUM[n]}" data-n="${n}" data-k="${k}"><span></span></li>`).join("");
     $("#p-results").innerHTML = film.results.map(([v, l]) => `<li><b>${v}</b><span>${l}</span></li>`).join("");
     $("#p-credits").innerHTML = film.credits.map(([r, n]) => `<div><dt>${r}</dt><dd>${n}</dd></div>`).join("") + `<div><dt>Client</dt><dd>${film.client}</dd></div><div><dt>Made by</dt><dd>Ceya Creative House</dd></div>`;
-    $("#p-next-link").href = `project.html?p=${next.slug}`;
+    $("#p-next-link").href = baked ? `${next.slug}.html` : `work/${next.slug}.html`;
     $("#p-next-title").textContent = next.title;
     $("#p-next-meta").textContent = `${next.format}, ${next.year}`;
     $("#p-next").style.setProperty("--na", next.a); $("#p-next").style.setProperty("--nb", next.b);
@@ -190,7 +191,8 @@
     const track = $("#p-stills-track"), stillsSec = $("#p-stills");
     if (!reduce && innerWidth > 700) {
       const dist = () => Math.max(0, track.scrollWidth - innerWidth + 120);
-      stillsSec.style.height = `calc(100vh + ${dist()}px)`;
+      const fit = () => { stillsSec.style.height = `calc(100vh + ${dist()}px)`; };
+      fit(); ScrollTrigger.addEventListener("refreshInit", fit);
       gsap.to(track, { x: () => -dist(), ease: "none", scrollTrigger: { trigger: stillsSec, start: "top top", end: () => `+=${dist()}`, scrub: true, invalidateOnRefresh: true } });
     }
 
@@ -207,8 +209,10 @@
       cities.forEach(c => {
         const parts = Object.fromEntries(new Intl.DateTimeFormat("en-GB", { timeZone: c.tz, hour: "2-digit", minute: "2-digit", second: "2-digit", weekday: "short", hour12: false }).formatToParts(d).map(p => [p.type, p.value]));
         c.time.textContent = `${parts.hour}:${parts.minute}:${parts.second}`;
-        const h = +parts.hour, open = !["Fri", "Sat"].includes(parts.weekday) && h >= 9 && h < 18;
-        c.state.textContent = open ? "In the studio now" : "Closed, we reply in the morning";
+        // Riyadh works Sunday to Thursday; Dubai works Monday to Friday.
+        const days = (c.el.dataset.days || "Sun Mon Tue Wed Thu").split(" ");
+        const h = +parts.hour, workday = days.includes(parts.weekday), open = workday && h >= 9 && h < 18;
+        c.state.textContent = open ? "In the studio now" : workday && h < 9 ? "Opens at 9, we reply today" : "Closed, we reply on the next working day";
         c.el.classList.toggle("is-open", open);
       });
     };

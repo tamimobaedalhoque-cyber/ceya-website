@@ -125,7 +125,7 @@ html.reduce .p-log .wd { opacity: 1; }
 /* ---------- Studio ---------- */
 .s-cities { display: grid; grid-template-columns: 1fr 1fr; gap: 6vw; padding-top: 6vh !important; padding-bottom: 18vh !important; }
 .s-city h2 { font-weight: 400; font-size: 18px; color: var(--c); }
-.s-clock { margin-top: 10px; font-weight: 300; font-size: clamp(60px, 9vw, 160px); line-height: .9; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+.s-clock { margin-top: 22px; font-weight: 300; font-size: clamp(60px, 9vw, 160px); line-height: .9; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
 .s-state { margin-top: 18px; font-size: 15px; color: var(--muted); display: flex; align-items: center; gap: 10px; }
 .s-state::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,.3); }
 .s-city.is-open .s-state { color: var(--white); }
@@ -213,3 +213,10 @@ html.reduce .p-log .wd { opacity: 1; }
 .c-direct-list a { border-bottom: 1px solid rgba(255,255,255,.25); transition: color .2s; }
 .c-direct-list a:hover { color: var(--sun); }
 @media (max-width: 860px) { .c-direct-list { grid-template-columns: 1fr 1fr; row-gap: 5vh; } }
+
+/* Phones: the timecode moves to the top of the picture so it never meets the caption. */
+@media (max-width: 700px) { .p-frame-tc { top: calc(var(--hud) + 96px); bottom: auto; } .p-frame-note { right: calc(var(--hud) + 30px); } }
+/* Reduced motion: the stills strip scrolls sideways by hand instead of being driven by the page. */
+html.reduce .p-stills-pin { position: relative; height: auto; padding: 14vh 0; overflow: visible; }
+html.reduce .p-stills-track { width: auto; overflow-x: auto; scroll-snap-type: x mandatory; }
+html.reduce .still { scroll-snap-align: start; }

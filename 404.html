@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Page not found | Ceya</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#07161A">
+<link rel="icon" href="/assets/logo/ceya-symbol.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/site.css?v=15">
+<style>
+  /* A lost frame: the viewfinder with nothing in shot, and the way back. */
+  body { min-height: 100svh; display: grid; place-items: center; background: var(--ink); }
+  .lost { display: grid; justify-items: center; text-align: center; gap: 26px; padding: 0 24px; }
+  .lost img { width: clamp(110px, 16vw, 180px); }
+  .lost h1 { font-weight: 300; font-size: clamp(44px, 7vw, 112px); line-height: .95; letter-spacing: -.04em; }
+  .lost p { max-width: 36ch; color: #C5D8D5; }
+  .lost nav { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px 28px; margin-top: 10px; }
+  .lost nav a { text-decoration: none; padding-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,.3); transition: color .2s, border-color .2s; }
+  .lost nav a:hover { color: var(--sun); border-color: var(--sun); }
+  .tc { position: fixed; right: calc(var(--hud) + 44px); top: calc(var(--hud) + 6px); font-size: 13px; color: rgba(255,255,255,.86); font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+<div class="hud" aria-hidden="true">
+  <span class="hud-mark hud-mark--tl"></span><span class="hud-mark hud-mark--tr"></span><span class="hud-mark hud-mark--bl"></span><span class="hud-mark hud-mark--br"></span>
+  <p class="hud-scene"><b>Scene 404</b><span>Missing frame</span></p>
+</div>
+<p class="tc" aria-hidden="true">--:--:--:--</p>
+<main class="lost">
+  <img src="/assets/logo/ceya-symbol.svg" alt="Ceya">
+  <h1>This frame was cut.</h1>
+  <p>The page you were looking for is not in the edit. It may have moved, or the link has a typo.</p>
+  <nav aria-label="Ways back">
+    <a href="/">Back to the first frame</a>
+    <a href="/index.html#work">Selected work</a>
+    <a href="/contact.html">Start a project</a>
+  </nav>
+</main>
+</body>
+</html>
