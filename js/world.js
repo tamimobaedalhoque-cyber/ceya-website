@@ -126,7 +126,8 @@ function frame() {
   state.sx += (state.mx - state.sx) * 0.05; state.sy += (state.my - state.sy) * 0.05;
   const p = state.p;
   // Phase A, 0 to 0.86: fly through the gates. Phase B, 0.86 to 1: the gates resolve into the logo.
-  const fly = clamp01(p / 0.86), resolve = smooth(clamp01((p - 0.82) / 0.16));
+  // The rings assemble in the centre first, then the finished logo glides to its place beside the headline.
+  const fly = clamp01(p / 0.86), resolve = smooth(clamp01((p - 0.8) / 0.14)), shift = smooth(clamp01((p - 0.95) / 0.05));
   const camZ = 12 + (END_Z + 13 - 12) * fly;
   const still = 1 - resolve * 0.6 - 0.4 * smooth(clamp01(state.foot));
   camera.position.set(state.sx * 1.2 * still, state.sy * 0.8 * still, camZ);
@@ -143,7 +144,7 @@ function frame() {
     const z = u.spreadZ + (u.logoZ - u.spreadZ) * resolve;
     const s = u.spreadScale + (1 - u.spreadScale) * resolve;
     const wide = window.innerWidth > 860, lx = wide ? 2.75 : 0, ly = wide ? 0 : 3.6, ls = wide ? 1 : 0.5;
-    const rx = lx * resolve, ry = ly * resolve, rs = s * (1 + (ls - 1) * resolve);
+    const rx = lx * shift, ry = ly * shift, rs = s * (1 + (ls - 1) * shift);
     m.position.set(rx + (0 - rx) * ft, ry + (fy - ry) * ft, z); m.scale.setScalar(rs + ((fs || rs) - rs) * ft);
     m.material.transparent = fade > 0; m.material.opacity = 1 - fade; m.visible = fade < 0.999;
     m.rotation.z = reduceMotion ? 0 : (1 - resolve) * Math.sin(time * u.spin + i) * 0.35;
