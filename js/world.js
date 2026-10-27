@@ -106,7 +106,7 @@ function resize() {
 window.addEventListener("resize", resize); resize();
 
 /* ---------- State driven by scroll ---------- */
-const state = { flat: 0, flatT: 0, dis: 0, disT: 0, p: 0, target: 0, res: 0, resT: 0, sh: 0, shT: 0, vel: 0, mx: 0, my: 0, sx: 0, sy: 0, flash: 0, foot: 0, footTarget: 0, footCy: 0, footPx: 0, clear: 0, clearT: 0 };
+const state = { flat: 0, flatT: 0, dis: 0, disT: 0, p: 0, target: 0, res: 0, resT: 0, sh: 0, shT: 0, vel: 0, mx: 0, my: 0, sx: 0, sy: 0, flash: 0, foot: 0, footTarget: 0, footCy: 0, footPx: 0 };
 const smooth = x => x * x * (3 - 2 * x);
 const clamp01 = x => Math.max(0, Math.min(1, x));
 window.World = {
@@ -118,8 +118,6 @@ window.World = {
   flash: () => { state.flash = 1; },
   // Footer handoff: f runs 0 to 1; cy and px are the footer symbol's centre and diameter in screen pixels.
   setFooter: (f, cy, px, flat = 0, dissolve = 0) => { state.footTarget = clamp01(f); state.footCy = cy; state.footPx = px; state.flatT = clamp01(flat); state.disT = clamp01(dissolve); },
-  // Clear: the camera trucks off the ring path, so the rings glide out of frame so a scene that needs a calm background (Listen to the mark) can be read.
-  setClear: c => { state.clearT = clamp01(c); },
   ready: true,
 };
 
@@ -136,15 +134,12 @@ function frame() {
   const fly = clamp01(p), resolve = smooth(state.res), shift = smooth(state.sh);
   const camZ = 12 + (END_Z + 13 - 12) * fly;
   const still = 1 - resolve * 0.6 - 0.4 * smooth(clamp01(state.foot));
-  // Off the path: a sideways truck, so the rings slide out to the upper right instead of vanishing.
-  const off = smooth(clamp01(state.clear)), ox = -26 * off, oy = -9 * off;
-  camera.position.set(state.sx * 1.2 * still + ox, state.sy * 0.8 * still + oy, camZ);
-  camera.lookAt(state.sx * 0.4 * still + ox, state.sy * 0.3 * still + oy, camZ - 20);
+  camera.position.set(state.sx * 1.2 * still, state.sy * 0.8 * still, camZ);
+  camera.lookAt(state.sx * 0.4 * still, state.sy * 0.3 * still, camZ - 20);
   camera.fov += ((window.innerWidth < 700 ? 58 : 42) + Math.abs(state.vel) * 10 - camera.fov) * 0.1; camera.updateProjectionMatrix();
   state.foot += (state.footTarget - state.foot) * (reduceMotion ? 1 : 1 - Math.pow(0.002, dt));
   state.flat += (state.flatT - state.flat) * (reduceMotion ? 1 : 1 - Math.pow(0.002, dt));
   state.dis = state.disT;
-  state.clear += (state.clearT - state.clear) * (reduceMotion ? 1 : 1 - Math.pow(0.004, dt));
   const ft = clamp01(state.foot);
   // Where the footer lockup's symbol will sit, converted from screen pixels to world units at the logo's depth.
   const dist = camZ - END_Z, ppu = window.innerHeight / (2 * dist * Math.tan((camera.fov * Math.PI) / 360));

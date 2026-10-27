@@ -95,13 +95,18 @@
   /* ---------- One scroll drives the camera, timecode and meter ---------- */
   const GATES = Array.from({ length: 8 }, (_, i) => (12 + 14 * i) / 115);
   let lastP = 0;
+  // Journey progress to flight progress: a straight run that clears the final gate (0.957) when the sound scene is half in view.
+  const flyOf = q => { const el = $("#sound-scene"), rs = $("#resolve"); const k = el && rs ? Math.max(0.3, (el.offsetTop - innerHeight * 0.45) / (rs.offsetTop - innerHeight)) : 0.82; return q < k ? (q / k) * 0.985 : 0.985 + 0.015 * Math.min(1, (q - k) / (1 - k)); };
   const hudTC = $("#hud-tc"), meter = $$("#hud-meter li"), sceneNo = $("#hud-scene-no"), sceneName = $("#hud-scene-name");
   ScrollTrigger.create({
     trigger: "#smooth", start: "top top", endTrigger: "#resolve", end: "top bottom",
     onUpdate: self => {
-      world().setProgress(self.progress); world().setVelocity(self.getVelocity());
-      // Score and ring passes. Gate i sits where the camera's travel reaches it: (12 + 14i) / 115 of the journey.
-      const p = self.progress, passed = GATES.filter(g => p >= g).length;
+      // The flight is warped so the camera has crossed the last gate by the time Listen to the mark settles:
+      // that ring leaves through the frame and only stars lie ahead until the rings return at the resolve.
+      const p = flyOf(self.progress);
+      world().setProgress(p); world().setVelocity(self.getVelocity());
+      // Score and ring passes. Gate i sits where the camera's travel reaches it: (12 + 14i) / 115 of the flight.
+      const passed = GATES.filter(g => p >= g).length;
       S.score(p, passed, Math.min(1, Math.abs(self.getVelocity()) / 4000));
       GATES.forEach((g, i) => { if ((lastP < g) !== (p < g)) S.ring(i, p > lastP ? 1 : -1); });
       lastP = p;
@@ -192,18 +197,6 @@
         const s = Math.round(p * 168); tlTc.textContent = `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
         steps.forEach((li, i) => li.classList.toggle("on", p >= i / steps.length - 0.02));
       },
-    });
-  }
-
-  /* ---------- Listen to the mark: the camera trucks off the ring path so the scene reads cleanly ---------- */
-  const soundScene = $("#sound-scene");
-  if (soundScene) {
-    const seg2 = (p, a, b) => Math.max(0, Math.min(1, (p - a) / (b - a)));
-    ScrollTrigger.create({
-      // Out as the scene arrives, back only after the numbers have passed, so no ring floods the screen mid-read.
-      trigger: soundScene, start: "top bottom", endTrigger: "#numbers", end: "bottom top",
-      onUpdate: self => { const a = soundScene.offsetHeight + innerHeight, tot = self.end - self.start, p = self.progress * tot / a, q = self.progress; world().setClear && world().setClear(seg2(p, 0.05, 0.42) * (1 - seg2(q, 0.8, 1))); },
-      onLeave: () => world().setClear && world().setClear(0), onLeaveBack: () => world().setClear && world().setClear(0),
     });
   }
 
