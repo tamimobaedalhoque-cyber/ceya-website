@@ -49,35 +49,18 @@
   const scrollTo = target => { const el = typeof target === "string" ? $(target) : target; if (!el) return; if (lenis) lenis.scrollTo(el, { duration: 1.8, easing: t => 1 - Math.pow(1 - t, 4) }); else el.scrollIntoView(); };
   $$('a[href^="#"]').forEach(a => a.addEventListener("click", e => { const id = a.getAttribute("href"); if (id.length > 1 && $(id)) { e.preventDefault(); scrollTo(id); } }));
 
-  /* ---------- Sound: the sonic logo, eight notes then a chord ---------- */
-  let soundOn = false, actx = null;
-  const NOTES = [293.66, 369.99, 440, 493.88, 587.33, 659.25, 739.99, 880];
-  function audio() { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); if (actx.state === "suspended") actx.resume(); return actx; }
-  function voice(ctx, out, f, at, len, g) {
-    const o = ctx.createOscillator(), o2 = ctx.createOscillator(), v = ctx.createGain(), v2 = ctx.createGain();
-    o.type = "sine"; o2.type = "triangle"; o.frequency.value = f; o2.frequency.value = f * 2.001; v2.gain.value = 0.16;
-    o.connect(v); o2.connect(v2); v2.connect(v); v.connect(out);
-    v.gain.setValueAtTime(0, at); v.gain.linearRampToValueAtTime(g, at + 0.012); v.gain.exponentialRampToValueAtTime(0.0008, at + len);
-    o.start(at); o2.start(at); o.stop(at + len + 0.05); o2.stop(at + len + 0.05);
-  }
+  /* ---------- Sound: synthesised in sound.js from the sonic logo's eight notes ---------- */
+  const S = window.CeyaSound || { on: false, toggle() { return false; }, score() {}, ring() {}, ui() {}, scrub() {}, sonic() {}, setEnd() {}, onNote() {} };
   let energy = 0;
-  function sonic() {
-    const ctx = audio(), out = ctx.createGain(), d = ctx.createDelay(), fb = ctx.createGain();
-    out.gain.value = 0.5; d.delayTime.value = 0.18; fb.gain.value = 0.28;
-    out.connect(ctx.destination); out.connect(d); d.connect(fb); fb.connect(d); d.connect(ctx.destination);
-    const t0 = ctx.currentTime + 0.05;
-    NOTES.forEach((f, i) => { voice(ctx, out, f, t0 + i * 0.165, 0.9, 0.22); setTimeout(() => { energy = Math.min(1, energy + 0.25); world().flash(); }, i * 165); });
-    [587.33, 739.99, 880].forEach(f => voice(ctx, out, f, t0 + 8 * 0.165 + 0.05, 1.5, 0.14));
-  }
-  function tick() { if (!soundOn) return; const ctx = audio(), o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.value = 1320; o.type = "sine"; g.gain.setValueAtTime(0.04, ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.06); o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime + 0.07); }
+  S.onNote(() => { energy = Math.min(1, energy + 0.25); world().flash(); });
+  const sonic = () => S.sonic();
   const soundBtn = $("#sound");
-  soundBtn.addEventListener("click", () => {
-    soundOn = !soundOn; soundBtn.setAttribute("aria-pressed", String(soundOn));
-    soundBtn.lastChild.textContent = soundOn ? "Sound on" : "Sound off";
-    if (soundOn) sonic();
-  });
+  const setSoundLabel = () => { soundBtn.setAttribute("aria-pressed", String(S.on)); soundBtn.lastChild.textContent = S.on ? "Sound on" : "Sound off"; };
+  soundBtn.addEventListener("click", () => { S.toggle(); setSoundLabel(); });
+  // Browsers only allow audio after a gesture, so a visitor who left sound on gets it back on their first click or key.
+  if (S.wanted) { const resume = () => { if (!S.on) { S.enable(); setSoundLabel(); } window.removeEventListener("pointerdown", resume); window.removeEventListener("keydown", resume); }; window.addEventListener("pointerdown", resume); window.addEventListener("keydown", resume); }
   $("#sonic").addEventListener("click", sonic);
-  $$("a, button").forEach(el => el.addEventListener("mouseenter", tick));
+  $$("a, button").forEach(el => { el.addEventListener("mouseenter", () => S.ui("hover")); if (el !== soundBtn) el.addEventListener("click", () => S.ui("click")); });
 
   /* ---------- Preloader: the rings draw on while the timecode runs ---------- */
   const loaderSvg = $("#loader-rings"), tcOut = $("#loader-tc");
@@ -104,18 +87,25 @@
   (function check() { if ((!draw.isActive() && (window.World || performance.now() - t0 > 2600)) || performance.now() - t0 > 4000) open.play(); else requestAnimationFrame(check); })();
 
   /* ---------- One scroll drives the camera, timecode and meter ---------- */
+  const GATES = Array.from({ length: 8 }, (_, i) => (12 + 14 * i) / 115);
+  let lastP = 0;
   const hudTC = $("#hud-tc"), meter = $$("#hud-meter li"), sceneNo = $("#hud-scene-no"), sceneName = $("#hud-scene-name");
   ScrollTrigger.create({
     trigger: "#smooth", start: "top top", endTrigger: "#resolve", end: "top bottom",
     onUpdate: self => {
       world().setProgress(self.progress); world().setVelocity(self.getVelocity());
+      // Score and ring passes. Gate i sits where the camera's travel reaches it: (12 + 14i) / 115 of the journey.
+      const p = self.progress, passed = GATES.filter(g => p >= g).length;
+      S.score(p, passed, Math.min(1, Math.abs(self.getVelocity()) / 4000));
+      GATES.forEach((g, i) => { if ((lastP < g) !== (p < g)) S.ring(i, p > lastP ? 1 : -1); });
+      lastP = p;
       hudTC.textContent = fmtTC(Math.round(self.progress * 168 * 24));
       const lit = Math.round(self.progress * 8); meter.forEach((m, i) => m.classList.toggle("on", i < lit));
     },
   });
   $$("[data-scene]").forEach(sec => ScrollTrigger.create({
     trigger: sec, start: "top 55%", end: "bottom 55%",
-    onToggle: self => { if (!self.isActive) return; sceneNo.textContent = `Scene ${sec.dataset.scene}`; sceneName.textContent = sec.dataset.name; gsap.fromTo(".hud-scene", { opacity: 0.2 }, { opacity: 1, duration: 0.6 }); },
+    onToggle: self => { if (!self.isActive) return; S.ui("slate"); sceneNo.textContent = `Scene ${sec.dataset.scene}`; sceneName.textContent = sec.dataset.name; gsap.fromTo(".hud-scene", { opacity: 0.2 }, { opacity: 1, duration: 0.6 }); },
   }));
 
   /* ---------- Hero leaves the frame: it drifts up and fades as the camera rolls ---------- */
@@ -130,7 +120,8 @@
   /* ---------- Resolve and shift: the rings close in the centre, then the logo moves beside the headline ---------- */
   let resP = 0, shP = 0;
   const phases = () => world().setPhases && world().setPhases(resP, shP);
-  ScrollTrigger.create({ trigger: "#resolve", start: "top bottom", end: "center center", scrub: true, onUpdate: s => { resP = s.progress; phases(); } });
+  let resolvedPlayed = false;
+  ScrollTrigger.create({ trigger: "#resolve", start: "top bottom", end: "center center", scrub: true, onUpdate: s => { resP = s.progress; phases(); if (s.progress > 0.92 && !resolvedPlayed) { resolvedPlayed = true; if (S.on) sonic(); } if (s.progress < 0.4) resolvedPlayed = false; } });
   ScrollTrigger.create({ trigger: "#play", start: "top bottom", end: "center center", scrub: true, onUpdate: s => { shP = s.progress; phases(); } });
   gsap.from(".resolve-cap", { opacity: 0, y: 20, duration: 1, ease: EASE, scrollTrigger: { trigger: "#resolve", start: "center 70%", toggleActions: "play none none reverse" } });
 
@@ -165,7 +156,7 @@
     let drag = null;
     const strip = $("#strip");
     strip.addEventListener("pointerdown", e => { drag = { x: e.clientX, s: window.scrollY }; strip.setPointerCapture(e.pointerId); });
-    strip.addEventListener("pointermove", e => { if (!drag) return; const target = drag.s - (e.clientX - drag.x) * 2.2; if (lenis) lenis.scrollTo(target, { immediate: false, lerp: 0.2 }); else window.scrollTo(0, target); });
+    strip.addEventListener("pointermove", e => { if (!drag) return; S.scrub((e.movementX || 0) / 40); const target = drag.s - (e.clientX - drag.x) * 2.2; if (lenis) lenis.scrollTo(target, { immediate: false, lerp: 0.2 }); else window.scrollTo(0, target); });
     const end = () => { drag = null; }; strip.addEventListener("pointerup", end); strip.addEventListener("pointercancel", end);
     $$(".frame").forEach(f => f.addEventListener("click", e => { if (drag && Math.abs(window.scrollY - drag.s) > 6) e.preventDefault(); }));
   }
@@ -174,7 +165,8 @@
   const gradeBox = $("#grade-box"), gradeRange = $("#grade-range");
   if (gradeBox) {
     const setX = v => gradeBox.style.setProperty("--x", `${v}%`);
-    gradeRange.addEventListener("input", () => setX(gradeRange.value));
+    let lastStep = -1;
+    gradeRange.addEventListener("input", () => { setX(gradeRange.value); const st = Math.round(gradeRange.value / 5); if (st !== lastStep) { lastStep = st; S.ui("grade", +gradeRange.value); } });
     if (!reduce) {
       const sweep = { v: 50 };
       ScrollTrigger.create({ trigger: gradeBox, start: "top 70%", once: true, onEnter: () => gsap.timeline().to(sweep, { v: 18, duration: 1.1, ease: "power2.inOut", onUpdate: () => { setX(sweep.v); gradeRange.value = sweep.v; } }).to(sweep, { v: 82, duration: 1.4, ease: "power2.inOut", onUpdate: () => { setX(sweep.v); gradeRange.value = sweep.v; } }).to(sweep, { v: 50, duration: 1, ease: "power2.inOut", onUpdate: () => { setX(sweep.v); gradeRange.value = sweep.v; } }) });
@@ -248,6 +240,7 @@
         const h = footLogo.offsetHeight, top = footLogo.getBoundingClientRect().top - foot.getBoundingClientRect().top;
         world().setFooter && world().setFooter(self.progress, top + SYM_CY * h, SYM_H * h);
         footLogo.style.opacity = gsap.utils.clamp(0, 1, (self.progress - 0.88) / 0.12);
+        S.setEnd(self.progress);
       },
     });
   }
@@ -255,6 +248,7 @@
   /* ---------- Menu opens like an iris from the button ---------- */
   const menu = $("#menu"), openBtn = $("#menu-open"), closeBtn = $("#menu-close");
   function openMenu() {
+    S.ui("open");
     const r = openBtn.getBoundingClientRect();
     menu.style.setProperty("--mx", `${r.left + r.width / 2}px`); menu.style.setProperty("--my", `${r.top + r.height / 2}px`);
     menu.hidden = false; openBtn.setAttribute("aria-expanded", "true"); if (lenis) lenis.stop();
@@ -263,6 +257,7 @@
     closeBtn.focus();
   }
   function closeMenu(then) {
+    S.ui("close");
     const r = openBtn.getBoundingClientRect();
     gsap.to(menu, { clipPath: `circle(0px at ${r.left + r.width / 2}px ${r.top + r.height / 2}px)`, duration: reduce ? 0.01 : 0.7, ease: "power4.inOut", onComplete: () => { menu.hidden = true; openBtn.setAttribute("aria-expanded", "false"); if (lenis) lenis.start(); openBtn.focus(); if (then) then(); } });
   }
