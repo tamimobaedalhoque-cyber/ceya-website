@@ -332,8 +332,9 @@ html.no-js .reveal-up, html.reduce .reveal-up { opacity: 1; transform: none; }
 .skip:focus-visible { transform: none; }
 
 /* Language switch: English pages offer عربي, Arabic pages offer English. It leads the right-hand group of the top bar. */
-.top-lang { margin-inline-start: auto; display: inline-flex; align-items: center; min-height: 44px; padding: 0 8px; font-size: 15px; color: var(--muted); text-decoration: none; transition: color .2s; }
-.top-lang[lang="ar"] { font-family: "Readex Pro", Jost, system-ui, sans-serif; font-size: 16px; }
+.top-lang { margin-inline-start: auto; display: inline-grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; color: var(--muted); transition: color .2s, transform .6s var(--ease); }
+.top-lang svg { display: block; }
+.top-lang:hover { transform: rotate(-20deg); }
 .top-lang:hover, .top-lang:focus-visible { color: var(--white); }
 .top-lang + .top-sound { margin-left: 0; margin-inline-start: 0; }
 @media (max-width: 700px) { .hero-cue { display: none; } }

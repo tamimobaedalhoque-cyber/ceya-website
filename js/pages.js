@@ -31,7 +31,7 @@
     const idx = Math.max(0, REEL.findIndex(f => f.slug === slug));
     film = pick(REEL[idx]);
     const next = pick(REEL[(idx + 1) % REEL.length]);
-    if (!baked) document.title = `${film.title} | ${tr("Ceya", "سيا")}`;
+    if (!baked) document.title = `${film.title} | ${tr("Ceya", "Ceya")}`;
     root.style.setProperty("--fa", film.a); root.style.setProperty("--fb", film.b);
     $("#p-reel").textContent = tr(`Reel ${pad(idx + 1)} of ${pad(REEL.length)}, ${film.format.toLowerCase()}`, `البكرة ${pad(idx + 1)} من ${pad(REEL.length)}، ${film.format}`);
     const t = $("#p-title"); t.textContent = "";
@@ -61,7 +61,7 @@
     // The motif as bars: height follows the note.
     $("#p-notes").innerHTML = film.motif.map((n, k) => n == null ? `<li class="rest" aria-label="Rest"></li>` : `<li style="--h:${0.3 + n * 0.1};--c:${SPECTRUM[n]}" data-n="${n}" data-k="${k}"><span></span></li>`).join("");
     $("#p-results").innerHTML = film.results.map(([v, l]) => `<li><b>${v}</b><span>${l}</span></li>`).join("");
-    $("#p-credits").innerHTML = film.credits.map(([r, n]) => `<div><dt>${r}</dt><dd>${n}</dd></div>`).join("") + `<div><dt>${tr("Client", "العميل")}</dt><dd>${film.client}</dd></div><div><dt>${tr("Made by", "إنتاج")}</dt><dd>${tr("Ceya Creative House", "دار سيا الإبداعية")}</dd></div>`;
+    $("#p-credits").innerHTML = film.credits.map(([r, n]) => `<div><dt>${r}</dt><dd>${n}</dd></div>`).join("") + `<div><dt>${tr("Client", "العميل")}</dt><dd>${film.client}</dd></div><div><dt>${tr("Made by", "إنتاج")}</dt><dd>${tr("Ceya Creative House", "Ceya Creative House")}</dd></div>`;
     $("#p-next-link").href = baked ? `${next.slug}.html` : `work/${next.slug}.html`;
     $("#p-next-title").textContent = next.title;
     $("#p-next-meta").textContent = `${next.format}${tr(", ", "، ")}${next.year}`;
