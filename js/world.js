@@ -153,12 +153,12 @@ function frame() {
     m.material.transparent = fade > 0; m.material.opacity = 1 - fade; m.visible = fade < 0.999;
     m.rotation.z = reduceMotion ? 0 : (1 - resolve) * Math.sin(time * u.spin + i) * 0.35;
     m.rotation.y = (1 - resolve) * 0.12 * Math.sin(time * 0.3 + i);
-    m.material.emissiveIntensity = 0.16 + 0.5 * Math.max(0, 1 - Math.abs(camZ - z - 6) / 10) * (1 - resolve) - 0.06 * resolve + state.flash * 0.45;
+    m.material.emissiveIntensity = 0.16 + 0.5 * Math.max(0, 1 - Math.abs(camZ - z - 6) / 10) * (1 - resolve) - 0.11 * resolve + state.flash * 0.35;
   });
   dust.rotation.z = time * 0.01; dust.material.opacity = 0.85 * (1 - resolve * 0.7);
   warm.position.set(-5, -2, camZ - 8); cool.position.set(6, 3, camZ - 14);
   scene.fog.density = 0.035 * (1 - resolve * 0.75);
-  bloom.strength = 0.34 - 0.12 * resolve + state.flash * 0.4;
+  bloom.strength = 0.34 - 0.2 * resolve + state.flash * 0.3;
   state.flash *= 0.94; state.vel *= 0.9;
   composer.render();
   requestAnimationFrame(frame);
