@@ -338,3 +338,6 @@ html.no-js .reveal-up, html.reduce .reveal-up { opacity: 1; transform: none; }
 .top-lang:hover, .top-lang:focus-visible { color: var(--white); }
 .top-lang + .top-sound { margin-left: 0; margin-inline-start: 0; }
 @media (max-width: 700px) { .hero-cue { display: none; } }
+
+/* Opening: the corner logo sits above the loading cover so the rings can land in it. */
+html.intro .top { z-index: 65; }

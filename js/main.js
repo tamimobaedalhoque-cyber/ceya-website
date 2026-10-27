@@ -85,13 +85,35 @@
   const draw = gsap.timeline();
   draw.to(loaderPaths, { strokeDashoffset: 0, duration: reduce ? 0.01 : 1.1, stagger: 0.07, ease: "power2.inOut" })
     .to(counter, { f: 24 * 2 + 12, duration: reduce ? 0.01 : 1.6, ease: "none", onUpdate: () => { tcOut.textContent = fmtTC(Math.round(counter.f)); } }, 0);
+  // Part two: the drawn rings glide into the logo in the top corner, the real logo takes over,
+  // and the cover folds away into it, the same way every page change ends.
+  const topLogo = $(".top-logo"), topSymbol = $(".top-logo img"), topRest = $$(".top > :not(.top-logo)");
+  root.classList.add("intro");
+  gsap.set(topLogo, { opacity: 0 }); gsap.set(topRest, { opacity: 0 });
+  function landing() {
+    // Measure where the rings are and where the corner symbol sits, then work out the move between them.
+    const rings = loaderPaths.map(p => p.getBoundingClientRect()), box = loaderSvg.getBoundingClientRect(), to = topSymbol.getBoundingClientRect();
+    const left = Math.min(...rings.map(r => r.left)), right = Math.max(...rings.map(r => r.right)), top = Math.min(...rings.map(r => r.top)), bottom = Math.max(...rings.map(r => r.bottom));
+    const s = to.height / (bottom - top), sc = [box.left + box.width / 2, box.top + box.height / 2], rc = [(left + right) / 2, (top + bottom) / 2];
+    const tc = [to.left + to.width / 2, to.top + to.height / 2];
+    return { s, x: tc[0] - (sc[0] + (rc[0] - sc[0]) * s), y: tc[1] - (sc[1] + (rc[1] - sc[1]) * s), cx: tc[0], cy: tc[1] };
+  }
   const open = gsap.timeline({ paused: true });
-  open.to(loaderSvg, { scale: 0.18, duration: reduce ? 0.01 : 0.55, ease: "power3.in" })
-    .to("#loader", { clipPath: "circle(0% at 50% 50%)", duration: reduce ? 0.01 : 0.95, ease: "power4.inOut" }, ">-0.1")
-    .from(heroChars, { yPercent: 110, duration: 1.1, stagger: 0.022, ease: "power4.out" }, ">-0.55")
+  // Measured once, the first time the move needs it, after the layout has settled.
+  let land = null;
+  const L = () => land || (land = landing());
+  open.add(() => { land = null; L(); })
+    .to(".loader-tc", { opacity: 0, y: 12, duration: reduce ? 0.01 : 0.4, ease: "power2.in" })
+    .to(loaderSvg, { x: () => L().x, y: () => L().y, scale: () => L().s, duration: reduce ? 0.01 : 1.05, ease: "power3.inOut", transformOrigin: "50% 50%" }, 0.1)
+    // The handover: the drawn rings fade into the real logo at the same spot.
+    .to(topLogo, { opacity: 1, duration: reduce ? 0.01 : 0.3, ease: "none" }, ">-0.12")
+    .to(loaderSvg, { opacity: 0, duration: reduce ? 0.01 : 0.3, ease: "none" }, "<")
+    .fromTo("#loader", { clipPath: () => `circle(150% at ${L().cx}px ${L().cy}px)` }, { clipPath: () => `circle(0px at ${L().cx}px ${L().cy}px)`, duration: reduce ? 0.01 : 1.05, ease: "power4.inOut", immediateRender: false }, "<")
+    .from(heroChars, { yPercent: 110, duration: 1.1, stagger: 0.022, ease: "power4.out" }, ">-0.6")
     .to(".scene--hero .reveal-up", { opacity: 1, y: 0, duration: 0.9, stagger: 0.1, ease: EASE }, ">-0.8")
-    .from(".hud, .top", { opacity: 0, duration: 0.9, ease: "none" }, "<")
-    .add(() => { root.classList.remove("is-loading"); $("#loader").style.display = "none"; if (lenis) lenis.start(); ScrollTrigger.refresh(); if (location.hash.length > 1 && $(location.hash)) setTimeout(() => scrollTo(location.hash), 200); });
+    .from(".hud", { opacity: 0, duration: 0.9, ease: "none" }, "<")
+    .to(topRest, { opacity: 1, duration: 0.8, ease: "none", stagger: 0.08, clearProps: "opacity" }, "<")
+    .add(() => { root.classList.remove("is-loading", "intro"); gsap.set(topLogo, { clearProps: "opacity" }); $("#loader").style.display = "none"; if (lenis) lenis.start(); ScrollTrigger.refresh(); if (location.hash.length > 1 && $(location.hash)) setTimeout(() => scrollTo(location.hash), 200); });
   const t0 = performance.now();
   (function check() { if ((!draw.isActive() && (window.World || performance.now() - t0 > 2600)) || performance.now() - t0 > 4000) open.play(); else requestAnimationFrame(check); })();
 
