@@ -195,6 +195,18 @@
     });
   }
 
+  /* ---------- Listen to the mark: the camera trucks off the ring path so the scene reads cleanly ---------- */
+  const soundScene = $("#sound-scene");
+  if (soundScene) {
+    const seg2 = (p, a, b) => Math.max(0, Math.min(1, (p - a) / (b - a)));
+    ScrollTrigger.create({
+      // Out as the scene arrives, back only after the numbers have passed, so no ring floods the screen mid-read.
+      trigger: soundScene, start: "top bottom", endTrigger: "#numbers", end: "bottom top",
+      onUpdate: self => { const a = soundScene.offsetHeight + innerHeight, tot = self.end - self.start, p = self.progress * tot / a, q = self.progress; world().setClear && world().setClear(seg2(p, 0.05, 0.42) * (1 - seg2(q, 0.8, 1))); },
+      onLeave: () => world().setClear && world().setClear(0), onLeaveBack: () => world().setClear && world().setClear(0),
+    });
+  }
+
   /* ---------- Sound: the symbol resonates, harder when it plays ---------- */
   const waveHost = $("#sound-wave");
   if (waveHost) {
