@@ -149,7 +149,7 @@ function frame() {
     const u = m.userData;
     const z = u.spreadZ + (END_Z + u.t * 0.34 * (1 - flat) - u.spreadZ) * resolve;
     const s = u.spreadScale + (1 - u.spreadScale) * resolve;
-    const wide = window.innerWidth > 860, lx = wide ? 2.75 : 0, ly = wide ? 0 : 3.6, ls = wide ? 1 : 0.5;
+    const wide = window.innerWidth > 860, lx = wide ? (document.documentElement.dir === "rtl" ? -2.75 : 2.75) : 0, ly = wide ? 0 : 3.6, ls = wide ? 1 : 0.5;
     const rx = lx * shift, ry = ly * shift, rs = s * (1 + (ls - 1) * shift);
     m.position.set(rx + (0 - rx) * ft, ry + (fy - ry) * ft, z); m.scale.setScalar(rs + ((fs || rs) - rs) * ft);
     m.material.opacity = 1 - fade; m.visible = fade < 0.995;

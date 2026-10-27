@@ -17,6 +17,10 @@
   const fmtTC = f => `${pad(Math.floor(f / 86400))}:${pad(Math.floor(f / 1440) % 60)}:${pad(Math.floor(f / 24) % 60)}:${pad(f % 24)}`;
   const svgEl = (tag, attrs = {}) => { const e = document.createElementNS("http://www.w3.org/2000/svg", tag); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; };
   const ringD = i => { const t = i / 7; return E.ringPath(500, 480 * (1 - t * 0.8), 0.95 * Math.pow(t, 1.6), i < 2 ? 0.3 : 0); };
+  // Arabic pages read right to left and carry their own words; tr() picks the right one.
+  const AR = root.lang === "ar", RTL = root.dir === "rtl";
+  const tr = (en, ar) => (AR ? ar : en);
+  const pick = f => (AR && f.ar ? { ...f, ...f.ar } : f);
 
   /* ---------- Build the film page from the reel before anything measures the layout ---------- */
   const REEL = window.CeyaReel || [];
@@ -25,42 +29,42 @@
     // Built film pages carry their slug; the title and words are already in the HTML for search engines.
     const baked = document.body.dataset.film, slug = baked || new URLSearchParams(location.search).get("p");
     const idx = Math.max(0, REEL.findIndex(f => f.slug === slug));
-    film = REEL[idx];
-    const next = REEL[(idx + 1) % REEL.length];
-    if (!baked) document.title = `${film.title} | Ceya`;
+    film = pick(REEL[idx]);
+    const next = pick(REEL[(idx + 1) % REEL.length]);
+    if (!baked) document.title = `${film.title} | ${tr("Ceya", "سيا")}`;
     root.style.setProperty("--fa", film.a); root.style.setProperty("--fb", film.b);
-    $("#p-reel").textContent = `Reel ${pad(idx + 1)} of ${pad(REEL.length)}, ${film.format.toLowerCase()}`;
+    $("#p-reel").textContent = tr(`Reel ${pad(idx + 1)} of ${pad(REEL.length)}, ${film.format.toLowerCase()}`, `البكرة ${pad(idx + 1)} من ${pad(REEL.length)}، ${film.format}`);
     const t = $("#p-title"); t.textContent = "";
     // Break long titles over two lines at the middle word.
     const words = film.title.split(" "), cut = words.length > 2 ? Math.ceil(words.length / 2) : words.length;
     [words.slice(0, cut).join(" "), words.slice(cut).join(" ")].filter(Boolean).forEach(l => { const s = document.createElement("span"); s.className = "line"; s.dataset.split = ""; s.textContent = l; t.appendChild(s); });
-    $("#p-facts").innerHTML = [["Client", film.client], ["Format", film.format], ["Year", film.year], ["Runtime", film.runtime]].map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("");
+    $("#p-facts").innerHTML = [[tr("Client", "العميل"), film.client], [tr("Format", "النوع"), film.format], [tr("Year", "السنة"), film.year], [tr("Runtime", "المدة"), film.runtime]].map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("");
     // The picture: the film's two colours with its pattern.
     const art = $("#p-frame-art"), s = svgEl("svg", { viewBox: "0 0 1000 1000", preserveAspectRatio: "xMidYMid slice" });
     E.draw(s, film.pat); art.appendChild(s);
     $("#p-log").textContent = film.logline; $("#p-log").dataset.words = "";
     // Layers: Concept, Story, Image, Sound, each tied to its ring.
-    const LAYERS = [["Concept", 0, "#F7B32B"], ["Story", 3, "#FC864F"], ["Image", 4, "#FF6F61"], ["Sound", 7, "#88D8B0"]];
+    const LAYERS = [[tr("Concept", "الفكرة"), 0, "#F7B32B"], [tr("Story", "القصة"), 3, "#FC864F"], [tr("Image", "الصورة"), 4, "#FF6F61"], [tr("Sound", "الصوت"), 7, "#88D8B0"]];
     const rings = $("#p-rings");
     for (let i = 0; i < 8; i++) rings.appendChild(svgEl("path", { d: ringD(i), fill: "none", stroke: SPECTRUM[i], "stroke-width": (7 - 3 * i / 7).toFixed(2), "stroke-linecap": "round", class: "pr", "data-i": i }));
     $("#p-layers-index").innerHTML = LAYERS.map(([n, , c]) => `<li style="--c:${c}">${n}</li>`).join("");
-    $("#p-layers-body").innerHTML = LAYERS.map(([n, , c], i) => `<article class="pl" style="--c:${c}"><span class="pl-no">Layer ${pad(i + 1)}</span><h3>${n}</h3><p>${film.layers[i]}</p></article>`).join("");
+    $("#p-layers-body").innerHTML = LAYERS.map(([n, , c], i) => `<article class="pl" style="--c:${c}"><span class="pl-no">${tr("Layer", "الطبقة")} ${pad(i + 1)}</span><h3>${n}</h3><p>${film.layers[i]}</p></article>`).join("");
     // Stills: variations of the film's pattern, numbered like frames.
     const track = $("#p-stills-track");
     film.stills.forEach((o, i) => {
       const f = document.createElement("figure"); f.className = "still";
       const mix = i % 2 ? `linear-gradient(200deg, ${film.b}, ${film.a})` : `linear-gradient(135deg, ${film.a}, ${film.b})`;
-      f.innerHTML = `<span class="still-img" style="background:${mix}"></span><figcaption><b>Frame ${String(1200 + i * 317).padStart(5, "0")}</b><i>${["Wide", "Close", "Insert", "Over the shoulder", "Final frame"][i] || "Frame"}</i></figcaption>`;
+      f.innerHTML = `<span class="still-img" style="background:${mix}"></span><figcaption><b>${tr("Frame", "لقطة")} ${String(1200 + i * 317).padStart(5, "0")}</b><i>${(AR ? ["واسعة", "قريبة", "تفصيلية", "من فوق الكتف", "اللقطة الأخيرة"] : ["Wide", "Close", "Insert", "Over the shoulder", "Final frame"])[i] || tr("Frame", "لقطة")}</i></figcaption>`;
       const sv = svgEl("svg", { viewBox: "0 0 1000 1000", preserveAspectRatio: "xMidYMid slice" });
       E.draw(sv, Object.assign({ mode: "mono", color: "rgba(255,255,255,.4)" }, o)); f.firstChild.appendChild(sv); track.appendChild(f);
     });
     // The motif as bars: height follows the note.
     $("#p-notes").innerHTML = film.motif.map((n, k) => n == null ? `<li class="rest" aria-label="Rest"></li>` : `<li style="--h:${0.3 + n * 0.1};--c:${SPECTRUM[n]}" data-n="${n}" data-k="${k}"><span></span></li>`).join("");
     $("#p-results").innerHTML = film.results.map(([v, l]) => `<li><b>${v}</b><span>${l}</span></li>`).join("");
-    $("#p-credits").innerHTML = film.credits.map(([r, n]) => `<div><dt>${r}</dt><dd>${n}</dd></div>`).join("") + `<div><dt>Client</dt><dd>${film.client}</dd></div><div><dt>Made by</dt><dd>Ceya Creative House</dd></div>`;
+    $("#p-credits").innerHTML = film.credits.map(([r, n]) => `<div><dt>${r}</dt><dd>${n}</dd></div>`).join("") + `<div><dt>${tr("Client", "العميل")}</dt><dd>${film.client}</dd></div><div><dt>${tr("Made by", "إنتاج")}</dt><dd>${tr("Ceya Creative House", "دار سيا الإبداعية")}</dd></div>`;
     $("#p-next-link").href = baked ? `${next.slug}.html` : `work/${next.slug}.html`;
     $("#p-next-title").textContent = next.title;
-    $("#p-next-meta").textContent = `${next.format}, ${next.year}`;
+    $("#p-next-meta").textContent = `${next.format}${tr(", ", "، ")}${next.year}`;
     $("#p-next").style.setProperty("--na", next.a); $("#p-next").style.setProperty("--nb", next.b);
     const nr = $("#p-next-ring");
     nr.appendChild(svgEl("path", { d: ringD(0), fill: "none", stroke: "rgba(255,255,255,.12)", "stroke-width": 4 }));
@@ -73,7 +77,8 @@
     text.split(/(\s+)/).forEach(part => {
       if (/^\s+$/.test(part)) { el.append(" "); return; }
       const w = document.createElement("span"); w.className = "wd"; w.setAttribute("aria-hidden", "true"); w.style.whiteSpace = "nowrap";
-      [...part].forEach(c => { const s = document.createElement("span"); s.className = "ch"; s.textContent = c; w.appendChild(s); });
+      // Arabic letters join, so Arabic is animated word by word instead of letter by letter.
+      (AR ? [part] : [...part]).forEach(c => { const s = document.createElement("span"); s.className = "ch"; s.textContent = c; w.appendChild(s); });
       el.appendChild(w);
     });
     return $$(".ch", el);
@@ -97,7 +102,7 @@
 
   /* ---------- Sound ---------- */
   const soundBtn = $("#sound");
-  const setSoundLabel = () => { soundBtn.setAttribute("aria-pressed", String(S.on)); soundBtn.lastChild.textContent = S.on ? "Sound on" : "Sound off"; };
+  const setSoundLabel = () => { soundBtn.setAttribute("aria-pressed", String(S.on)); soundBtn.lastChild.textContent = S.on ? tr("Sound on", "الصوت يعمل") : tr("Sound off", "الصوت مغلق"); };
   soundBtn.addEventListener("click", () => { S.toggle(); setSoundLabel(); });
   if (S.wanted) { const resume = () => { if (!S.on) { S.enable(); setSoundLabel(); } window.removeEventListener("pointerdown", resume); window.removeEventListener("keydown", resume); }; window.addEventListener("pointerdown", resume); window.addEventListener("keydown", resume); }
   const pos = el => { const r = el.getBoundingClientRect(); return { x: (r.left + r.width / 2) / innerWidth, y: 1 - (r.top + r.height / 2) / innerHeight }; };
@@ -193,7 +198,7 @@
       const dist = () => Math.max(0, track.scrollWidth - innerWidth + 120);
       const fit = () => { stillsSec.style.height = `calc(100vh + ${dist()}px)`; };
       fit(); ScrollTrigger.addEventListener("refreshInit", fit);
-      gsap.to(track, { x: () => -dist(), ease: "none", scrollTrigger: { trigger: stillsSec, start: "top top", end: () => `+=${dist()}`, scrub: true, invalidateOnRefresh: true } });
+      gsap.to(track, { x: () => (RTL ? dist() : -dist()), ease: "none", scrollTrigger: { trigger: stillsSec, start: "top top", end: () => `+=${dist()}`, scrub: true, invalidateOnRefresh: true } });
     }
 
     // Next reel: its ring draws as you approach; reaching the end of the page fills it.
@@ -212,7 +217,7 @@
         // Riyadh works Sunday to Thursday; Dubai works Monday to Friday.
         const days = (c.el.dataset.days || "Sun Mon Tue Wed Thu").split(" ");
         const h = +parts.hour, workday = days.includes(parts.weekday), open = workday && h >= 9 && h < 18;
-        c.state.textContent = open ? "In the studio now" : workday && h < 9 ? "Opens at 9, we reply today" : "Closed, we reply on the next working day";
+        c.state.textContent = open ? tr("In the studio now", "في الاستوديو الآن") : workday && h < 9 ? tr("Opens at 9, we reply today", "نفتح في التاسعة، ونرد اليوم") : tr("Closed, we reply on the next working day", "مغلق الآن، ونرد في يوم العمل التالي");
         c.el.classList.toggle("is-open", open);
       });
     };
@@ -235,21 +240,24 @@
       paths.forEach((p, i) => gsap.to(p, { attr: { "stroke-dashoffset": i < lit ? 0 : 1 }, duration: reduce ? 0 : 0.9, ease: "power3.inOut", delay: reduce ? 0 : Math.max(0, i - lastLit) * 0.06, overwrite: true }));
       if (lit > lastLit) for (let i = lastLit; i < lit; i++) setTimeout(() => S.instrument(i, 0.75), (i - lastLit) * 90);
       lastLit = lit;
-      count.textContent = `${done} of ${qs.length} answered`;
+      count.textContent = tr(`${done} of ${qs.length} answered`, `أُجيب عن ${done} من ${qs.length}`);
       play.setAttribute("fill", done === qs.length ? "#88D8B0" : "rgba(255,255,255,.14)");
     };
     form.addEventListener("input", update); form.addEventListener("change", update); update();
     form.addEventListener("submit", e => {
       e.preventDefault();
       if (!form.name.value.trim() || !/\S+@\S+\.\S+/.test(form.email.value)) {
-        status.textContent = "Add your name and a working email in question 5, so we can reply."; status.className = "brief-status is-error";
+        status.textContent = tr("Add your name and a working email in question 5, so we can reply.", "أضف اسمك وبريدًا إلكترونيًا صحيحًا في السؤال 5 لنتمكن من الرد."); status.className = "brief-status is-error";
         scrollTo(qs[4]); setTimeout(() => (form.name.value.trim() ? form.email : form.name).focus(), 900); return;
       }
-      const list = n => $$(`input[name="${n}"]:checked`, form).map(i => i.value).join(", ") || "Not said yet";
-      const body = [`Name: ${form.name.value.trim()}`, `Company: ${form.company.value.trim() || "Not said"}`, `Email: ${form.email.value.trim()}`, "", `What we are making: ${list("make")}`, `Where it will play: ${list("where")}`, `When: ${list("when")}`, `Budget: ${list("budget")}`, "", "The idea:", form.idea.value.trim() || "We will tell you on a call."].join("\n");
+      const list = n => $$(`input[name="${n}"]:checked`, form).map(i => i.value).join(tr(", ", "، ")) || tr("Not said yet", "لم يُحدَّد بعد");
+      const name = form.name.value.trim(), company = form.company.value.trim(), idea = form.idea.value.trim();
+      const body = (AR
+        ? [`الاسم: ${name}`, `الشركة: ${company || "لم تُذكر"}`, `البريد: ${form.email.value.trim()}`, "", `ماذا سنصنع: ${list("make")}`, `أين سيُعرض: ${list("where")}`, `الموعد: ${list("when")}`, `الميزانية: ${list("budget")}`, "", "الفكرة:", idea || "سنخبركم في مكالمة."]
+        : [`Name: ${name}`, `Company: ${company || "Not said"}`, `Email: ${form.email.value.trim()}`, "", `What we are making: ${list("make")}`, `Where it will play: ${list("where")}`, `When: ${list("when")}`, `Budget: ${list("budget")}`, "", "The idea:", idea || "We will tell you on a call."]).join("\n");
       S.sonic(true);
-      location.href = `mailto:hello@ceya.studio?subject=${encodeURIComponent(`New brief from ${form.name.value.trim()}`)}&body=${encodeURIComponent(body)}`;
-      status.textContent = "Your email app has opened with the brief filled in. Send it from there and we will reply within a day."; status.className = "brief-status is-sent";
+      location.href = `mailto:hello@ceya.studio?subject=${encodeURIComponent(tr(`New brief from ${name}`, `موجز جديد من ${name}`))}&body=${encodeURIComponent(body)}`;
+      status.textContent = tr("Your email app has opened with the brief filled in. Send it from there and we will reply within a day.", "فُتح تطبيق البريد والموجز جاهز فيه. أرسله من هناك وسنرد خلال يوم."); status.className = "brief-status is-sent";
     });
   }
 

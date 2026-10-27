@@ -330,3 +330,10 @@ html.no-js .reveal-up, html.reduce .reveal-up { opacity: 1; transform: none; }
 /* Skip link: visible only when focused from the keyboard. */
 .skip { position: fixed; left: 16px; top: 16px; z-index: 100; padding: 10px 18px; border-radius: 999px; background: var(--white); color: var(--ink); font-size: 15px; text-decoration: none; transform: translateY(-200%); transition: transform .2s; }
 .skip:focus-visible { transform: none; }
+
+/* Language switch: English pages offer عربي, Arabic pages offer English. It leads the right-hand group of the top bar. */
+.top-lang { margin-inline-start: auto; display: inline-flex; align-items: center; min-height: 44px; padding: 0 8px; font-size: 15px; color: var(--muted); text-decoration: none; transition: color .2s; }
+.top-lang[lang="ar"] { font-family: "Readex Pro", Jost, system-ui, sans-serif; font-size: 16px; }
+.top-lang:hover, .top-lang:focus-visible { color: var(--white); }
+.top-lang + .top-sound { margin-left: 0; margin-inline-start: 0; }
+@media (max-width: 700px) { .hero-cue { display: none; } }

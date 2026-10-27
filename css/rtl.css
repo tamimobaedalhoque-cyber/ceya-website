@@ -1,0 +1,66 @@
+/* Ceya website, Arabic. Loaded after site.css and pages.css on /ar/ pages only.
+   Reading flows right to left; camera conventions stay put: the viewfinder, timecodes,
+   play triangles and the grade comparison keep their physical sides. */
+
+/* ---------- Type: Readex Pro for Arabic, Jost still sets the Latin and the numbers ---------- */
+html[dir="rtl"] body { font-family: "Readex Pro", Jost, Futura, system-ui, sans-serif; }
+html[dir="rtl"] body *:not(.hud):not(.hud *) { letter-spacing: 0 !important; }
+/* Arabic needs more room above and below than Latin display type. */
+html[dir="rtl"] .hero-title, html[dir="rtl"] .play-title, html[dir="rtl"] .p-title { line-height: 1.12; }
+html[dir="rtl"] .statement, html[dir="rtl"] .p-log { line-height: 1.35; }
+html[dir="rtl"] .layers-head h2, html[dir="rtl"] .layers-title, html[dir="rtl"] .work-head h2, html[dir="rtl"] .grade-copy h2,
+html[dir="rtl"] .process-pin h2, html[dir="rtl"] .sound-copy h2, html[dir="rtl"] .p-h2, html[dir="rtl"] .pl h3,
+html[dir="rtl"] .s-cta-title, html[dir="rtl"] .q legend, html[dir="rtl"] .p-next-title, html[dir="rtl"] .menu-list a,
+html[dir="rtl"] .manifesto li, html[dir="rtl"] .s-layer-list h3, html[dir="rtl"] .s-crew-list b, html[dir="rtl"] .lyr-word { line-height: 1.2; }
+html[dir="rtl"] .line { padding-bottom: .18em; margin-bottom: -.08em; }
+html[dir="rtl"] .hero-title { font-size: clamp(56px, 11.6vw, 200px); }
+html[dir="rtl"] .p-title { font-size: clamp(52px, 10vw, 180px); }
+html[dir="rtl"] .lyr-word { font-size: clamp(72px, 14vw, 250px); -webkit-text-stroke-width: 1.2px; }
+html[dir="rtl"] .hero-sub, html[dir="rtl"] .s-sub, html[dir="rtl"] .pl p, html[dir="rtl"] .p-score-copy p { line-height: 1.8; }
+/* Numbers, emails, phone numbers and timecodes read left to right inside Arabic text. */
+html[dir="rtl"] .numbers b, html[dir="rtl"] .p-results-list b, html[dir="rtl"] .s-clock, html[dir="rtl"] .frame-tc,
+html[dir="rtl"] .p-frame-tc, html[dir="rtl"] .tl-head i, html[dir="rtl"] a[href^="mailto:"], html[dir="rtl"] a[href^="tel:"] { direction: ltr; unicode-bidi: isolate; }
+html[dir="rtl"] .p-results-list b, html[dir="rtl"] .numbers b { text-align: right; }
+
+/* ---------- Frame and top bar ---------- */
+html[dir="rtl"] .hud { direction: ltr; }
+html[dir="rtl"] .hud-scene span, html[dir="rtl"] .hud-scene b, html[dir="rtl"] .hud-rec { unicode-bidi: isolate; direction: rtl; }
+html[dir="rtl"] .hero-cue { right: auto; left: calc(var(--hud) + 44px); }
+html[dir="rtl"] .skip { left: auto; right: 16px; }
+html[dir="rtl"] .menu-list a:hover, html[dir="rtl"] .menu-list a:focus-visible { transform: translateX(-1.4vw); }
+
+/* ---------- Homepage ---------- */
+html[dir="rtl"] .layers-head { left: auto; right: 0; }
+html[dir="rtl"] .layers-index { right: auto; left: 0; text-align: left; }
+html[dir="rtl"] .lyr-body li { padding-left: 0; padding-right: 14px; }
+html[dir="rtl"] .lyr-body li::before { left: auto; right: 0; }
+html[dir="rtl"] .frame-meta { left: auto; right: 22px; }
+html[dir="rtl"] .frame-tc { right: auto; left: 18px; }
+/* The grade comparison keeps "before" on the left and "after" on the right, like the footage. */
+html[dir="rtl"] .grade-box { direction: ltr; }
+html[dir="rtl"] .grade-box .grade-tag { direction: rtl; }
+/* The edit timeline runs right to left; the playhead's timecode is turned back so it reads normally. */
+html[dir="rtl"] .tl-track { transform: scaleX(-1); }
+html[dir="rtl"] .tl-head i { transform: translateX(-50%) scaleX(-1); }
+html[dir="rtl"] .play-meta span::before { margin-right: 0; margin-left: 12px; }
+html[dir="rtl"] .manifesto li { transform-origin: 100% 50%; }
+
+/* ---------- Film pages ---------- */
+html[dir="rtl"] .p-frame-note { left: auto; right: calc(var(--hud) + 44px); }
+html[dir="rtl"] .p-frame-tc { right: auto; left: calc(var(--hud) + 44px); }
+html[dir="rtl"] .p-layers-index li::before { left: auto; right: 0; }
+html[dir="rtl"] .p-credits-list dt { text-align: left; }
+html[dir="rtl"] .p-credits-list dd { text-align: right; }
+html[dir="rtl"] .p-next-ring { transform: translate(-50%, -50%) rotate(-90deg) scaleY(-1); }
+@media (max-width: 700px) { html[dir="rtl"] .p-frame-note { right: calc(var(--hud) + 44px); left: calc(var(--hud) + 30px); } }
+
+/* ---------- Studio ---------- */
+html[dir="rtl"] .s-crew-list li::after, html[dir="rtl"] .s-crew-list li::before { left: auto; right: 0; }
+html[dir="rtl"] .s-crew-list li:hover b { transform: translateX(-10px); }
+html[dir="rtl"] .s-crew-list i { text-align: left; }
+html[dir="rtl"] .s-clock { text-align: right; }
+html[dir="rtl"] .s-where { direction: rtl; }
+
+/* ---------- Brief ---------- */
+@media (max-width: 960px) { html[dir="rtl"] .brief-ring { right: auto; left: calc(var(--hud) + 30px); } }
+html[dir="rtl"] .field input[type="email"] { direction: ltr; text-align: right; }

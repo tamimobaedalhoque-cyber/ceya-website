@@ -15,6 +15,9 @@
   window.scrollTo(0, 0);
   const EASE = "power3.out";
   const SPECTRUM = ["#F7B32B", "#F7B32B", "#FA9C3D", "#FC864F", "#FF6F61", "#D7927B", "#B0B596", "#88D8B0"];
+  // Arabic pages read right to left: the strip runs the other way and Arabic words are never split into letters.
+  const AR = root.lang === "ar", RTL = root.dir === "rtl";
+  const tr = (en, ar) => (AR ? ar : en);
   const world = () => window.World || { setProgress() {}, setVelocity() {}, setPointer() {}, flash() {} };
 
   /* ---------- Split text into characters or words ---------- */
@@ -23,7 +26,7 @@
     text.split(/(\s+)/).forEach(part => {
       if (/^\s+$/.test(part)) { el.append(" "); return; }
       const w = document.createElement("span"); w.className = "wd"; w.setAttribute("aria-hidden", "true"); w.style.whiteSpace = "nowrap";
-      [...part].forEach(c => { const s = document.createElement("span"); s.className = "ch"; s.textContent = c; w.appendChild(s); });
+      (AR ? [part] : [...part]).forEach(c => { const s = document.createElement("span"); s.className = "ch"; s.textContent = c; w.appendChild(s); });
       el.appendChild(w);
     });
     return $$(".ch", el);
@@ -55,7 +58,7 @@
   S.onNote(() => { energy = Math.min(1, energy + 0.25); world().flash(); });
   const sonic = () => S.sonic();
   const soundBtn = $("#sound");
-  const setSoundLabel = () => { soundBtn.setAttribute("aria-pressed", String(S.on)); soundBtn.lastChild.textContent = S.on ? "Sound on" : "Sound off"; };
+  const setSoundLabel = () => { soundBtn.setAttribute("aria-pressed", String(S.on)); soundBtn.lastChild.textContent = S.on ? tr("Sound on", "الصوت يعمل") : tr("Sound off", "الصوت مغلق"); };
   soundBtn.addEventListener("click", () => { S.toggle(); setSoundLabel(); });
   // Browsers only allow audio after a gesture, so a visitor who left sound on gets it back on their first click or key.
   if (S.wanted) { const resume = () => { if (!S.on) { S.enable(); setSoundLabel(); } window.removeEventListener("pointerdown", resume); window.removeEventListener("keydown", resume); }; window.addEventListener("pointerdown", resume); window.addEventListener("keydown", resume); }
@@ -116,7 +119,7 @@
   });
   $$("[data-scene]").forEach(sec => ScrollTrigger.create({
     trigger: sec, start: "top 55%", end: "bottom 55%",
-    onToggle: self => { if (!self.isActive) return; S.ui("slate"); sceneNo.textContent = `Scene ${sec.dataset.scene}`; sceneName.textContent = sec.dataset.name; gsap.fromTo(".hud-scene", { opacity: 0.2 }, { opacity: 1, duration: 0.6 }); },
+    onToggle: self => { if (!self.isActive) return; S.ui("slate"); sceneNo.textContent = `${tr("Scene", "مشهد")} ${sec.dataset.scene}`; sceneName.textContent = sec.dataset.name; gsap.fromTo(".hud-scene", { opacity: 0.2 }, { opacity: 1, duration: 0.6 }); },
   }));
 
   /* ---------- Hero leaves the frame: it drifts up and fades as the camera rolls ---------- */
@@ -162,13 +165,13 @@
   if (track) {
     const skew = gsap.quickTo(track, "skewX", { duration: 0.5, ease: "power3" });
     gsap.to(track, {
-      x: () => -(track.scrollWidth - window.innerWidth), ease: "none",
-      scrollTrigger: { trigger: ".scene--work", start: "top top", end: "bottom bottom", scrub: 0.4, invalidateOnRefresh: true, onUpdate: self => skew(reduce ? 0 : gsap.utils.clamp(-8, 8, self.getVelocity() / -260)) },
+      x: () => (RTL ? 1 : -1) * (track.scrollWidth - window.innerWidth), ease: "none",
+      scrollTrigger: { trigger: ".scene--work", start: "top top", end: "bottom bottom", scrub: 0.4, invalidateOnRefresh: true, onUpdate: self => skew(reduce ? 0 : gsap.utils.clamp(-8, 8, self.getVelocity() / (RTL ? 260 : -260))) },
     });
     let drag = null;
     const strip = $("#strip");
     strip.addEventListener("pointerdown", e => { drag = { x: e.clientX, s: window.scrollY }; strip.setPointerCapture(e.pointerId); });
-    strip.addEventListener("pointermove", e => { if (!drag) return; S.scrub((e.movementX || 0) / 40); const target = drag.s - (e.clientX - drag.x) * 2.2; if (lenis) lenis.scrollTo(target, { immediate: false, lerp: 0.2 }); else window.scrollTo(0, target); });
+    strip.addEventListener("pointermove", e => { if (!drag) return; S.scrub((e.movementX || 0) / 40); const target = drag.s + (RTL ? 1 : -1) * (e.clientX - drag.x) * 2.2; if (lenis) lenis.scrollTo(target, { immediate: false, lerp: 0.2 }); else window.scrollTo(0, target); });
     // A tap opens the film; a drag only scrubs. Pointer capture sends the release to the strip, so find the frame under it.
     strip.addEventListener("pointerup", e => {
       const moved = drag && Math.abs(e.clientX - drag.x) > 6; drag = null;
