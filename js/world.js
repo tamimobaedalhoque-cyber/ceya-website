@@ -71,7 +71,8 @@ for (let i = 0; i < 8; i++) {
   const mat = new THREE.MeshPhysicalMaterial({ color, emissive: color, emissiveIntensity: 0.22, roughness: 0.22, metalness: 0.05, clearcoat: 1, clearcoatRoughness: 0.08, transparent: true, opacity: 1 }); // transparent from the start so the final fade is smooth
   const mesh = new THREE.Mesh(bandGeo(ringLine(i), closed, hw, 0.12, hw * 0.42), mat);
   // During the flight every ring is enlarged to a gate the camera can pass through; at the end each returns to its true size.
-  const spreadScale = SPREAD_SCALE * (1 + (1 - t) * 0.15) * (E.MARK.mean[0] / E.MARK.mean[i]);
+  // The first gate is the C, sized to sit whole in the opening frame with its opening visible on the right.
+  const spreadScale = i === 0 ? 2.05 : SPREAD_SCALE * (1 + (1 - t) * 0.15) * (E.MARK.mean[0] / E.MARK.mean[i]);
   mesh.userData = { t, spreadZ: -i * GAP, logoZ: END_Z + t * 0.34, spreadScale, spin: (i % 2 ? -1 : 1) * (0.08 + i * 0.015) };
   scene.add(mesh); rings.push(mesh);
 }
@@ -151,7 +152,8 @@ function frame() {
     const rx = lx * shift, ry = ly * shift, rs = s * (1 + (ls - 1) * shift);
     m.position.set(rx + (0 - rx) * ft, ry + (fy - ry) * ft, z); m.scale.setScalar(rs + ((fs || rs) - rs) * ft);
     m.material.opacity = 1 - fade; m.visible = fade < 0.995;
-    m.rotation.z = reduceMotion ? 0 : (1 - resolve) * Math.sin(time * u.spin + i) * 0.35;
+    // The C barely sways, so its opening always reads on the right; the closed rings drift more freely.
+    m.rotation.z = reduceMotion ? 0 : (1 - resolve) * Math.sin(time * u.spin + i) * (i === 0 ? 0.06 : 0.35);
     m.rotation.y = (1 - resolve) * 0.12 * Math.sin(time * 0.3 + i);
     m.material.emissiveIntensity = 0.16 + 0.5 * Math.max(0, 1 - Math.abs(camZ - z - 6) / 10) * (1 - resolve) - 0.11 * resolve + state.flash * 0.35 - 0.1 * flat;
   });
