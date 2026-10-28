@@ -13,16 +13,13 @@ const canvas = document.getElementById("world");
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const SPECTRUM = ["#F7B32B", "#F7B32B", "#FA9C3D", "#FC864F", "#FF6F61", "#D7927B", "#B0B596", "#88D8B0"];
 
-/* ---------- Ring geometry, from the master construction ---------- */
-const W3 = (2 * Math.PI) / 3;
-const triR = th => { const p = (((th % W3) + W3) % W3) - Math.PI / 3; return 0.5 / Math.cos(p); };
-const softTri = th => { let s = 0; const K = 11, D = 0.42; for (let j = 0; j < K; j++) s += triR(th + D * (j / (K - 1) - 0.5)); return s / K; };
-const TRI0 = softTri(0);
-function ringLine(R, a, gap, N = 280) {
-  const pts = [], count = gap ? N + 1 : N;
-  for (let k = 0; k < count; k++) { const th = gap + ((2 * Math.PI - 2 * gap) * k) / N, r = R * (1 - a + (a * softTri(th)) / TRI0); pts.push([r * Math.cos(th), r * Math.sin(th)]); }
-  return pts;
-}
+/* ---------- Ring geometry: the real symbol, measured from assets/logo/ceya-symbol.svg (see engine.js) ----------
+   World units: the C's centre line has radius 2.2 * 0.96. Each ring keeps its true shape and line weight,
+   and only the outermost ring, the C, is open. */
+const E = window.CeyaEngine;
+const K3 = (2.2 * 0.96) / E.MARK.mean[0];
+const OUTER = (E.MARK.mean[0] + E.MARK.w[0] / 2) * K3; // radius of the C's outer edge
+const ringLine = (i, N = 280) => E.markPoints(i, { N }).map(([x, y]) => [(x - 500) * K3, -(y - 500) * K3]);
 const area = p => { let s = 0; for (let i = 0; i < p.length; i++) { const a = p[i], b = p[(i + 1) % p.length]; s += a.x * b.y - b.x * a.y; } return s / 2; };
 function strokeShape(line, hw, closed) {
   const n = line.length, N = [];
@@ -43,7 +40,7 @@ function strokeShape(line, hw, closed) {
   return new THREE.Shape(pts);
 }
 function bandGeo(line, closed, hw, depth, bevel) {
-  const g = new THREE.ExtrudeGeometry(strokeShape(line, Math.max(0.004, hw - bevel), closed), { depth, steps: 1, curveSegments: 4, bevelEnabled: true, bevelThickness: bevel, bevelSize: bevel * 0.9, bevelSegments: 5 });
+  const g = new THREE.ExtrudeGeometry(strokeShape(line, Math.max(0.002, hw - bevel), closed), { depth, steps: 1, curveSegments: 4, bevelEnabled: true, bevelThickness: bevel, bevelSize: bevel * 0.9, bevelSegments: 5 });
   g.translate(0, 0, -depth / 2); return g;
 }
 
@@ -69,11 +66,12 @@ const cool = new THREE.PointLight(0x88d8b0, 26, 40); scene.add(cool);
 const GAP = 14, SPREAD_SCALE = 3.1, END_Z = -7 * GAP - 18;
 const rings = [];
 for (let i = 0; i < 8; i++) {
-  const t = i / 7, R = 2.2 * 0.96 * (1 - t * 0.8), a = 0.95 * Math.pow(t, 1.6), gap = i < 2 ? 0.3 : 0;
+  const t = i / 7, closed = i !== 0, hw = (E.MARK.w[i] / 2) * K3;
   const color = new THREE.Color(SPECTRUM[i]);
   const mat = new THREE.MeshPhysicalMaterial({ color, emissive: color, emissiveIntensity: 0.22, roughness: 0.22, metalness: 0.05, clearcoat: 1, clearcoatRoughness: 0.08, transparent: true, opacity: 1 }); // transparent from the start so the final fade is smooth
-  const mesh = new THREE.Mesh(bandGeo(ringLine(R, a, gap), gap === 0, 0.06 - 0.016 * t, 0.2, 0.03), mat);
-  const spreadScale = SPREAD_SCALE * (1 + (1 - t) * 0.15) / (1 - t * 0.8);
+  const mesh = new THREE.Mesh(bandGeo(ringLine(i), closed, hw, 0.12, hw * 0.42), mat);
+  // During the flight every ring is enlarged to a gate the camera can pass through; at the end each returns to its true size.
+  const spreadScale = SPREAD_SCALE * (1 + (1 - t) * 0.15) * (E.MARK.mean[0] / E.MARK.mean[i]);
   mesh.userData = { t, spreadZ: -i * GAP, logoZ: END_Z + t * 0.34, spreadScale, spin: (i % 2 ? -1 : 1) * (0.08 + i * 0.015) };
   scene.add(mesh); rings.push(mesh);
 }
@@ -143,7 +141,7 @@ function frame() {
   const ft = clamp01(state.foot);
   // Where the footer lockup's symbol will sit, converted from screen pixels to world units at the logo's depth.
   const dist = camZ - END_Z, ppu = window.innerHeight / (2 * dist * Math.tan((camera.fov * Math.PI) / 360));
-  const fy = (window.innerHeight / 2 - state.footCy) / ppu, fs = state.footPx / ppu / (2 * 2.17);
+  const fy = (window.innerHeight / 2 - state.footCy) / ppu, fs = state.footPx / ppu / (2 * OUTER);
   const fade = clamp01(state.dis), flat = clamp01(state.flat);
   rings.forEach((m, i) => {
     const u = m.userData;

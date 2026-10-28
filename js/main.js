@@ -75,8 +75,9 @@
   const loaderSvg = $("#loader-rings"), tcOut = $("#loader-tc");
   const loaderPaths = SPECTRUM.map((c, i) => {
     const t = i / 7, p = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    p.setAttribute("d", E.ringPath(500, 480 * (1 - t * 0.8), 0.95 * Math.pow(t, 1.6), i < 2 ? 0.3 : 0));
-    p.setAttribute("fill", "none"); p.setAttribute("stroke", c); p.setAttribute("stroke-width", (12 - 5 * t).toFixed(1)); p.setAttribute("stroke-linecap", "round");
+    // The real ring's centre line at its true weight: drawn on, it is the logo exactly.
+    p.setAttribute("d", E.markLine(i));
+    p.setAttribute("fill", "none"); p.setAttribute("stroke", c); p.setAttribute("stroke-width", E.MARK.w[i]); p.setAttribute("stroke-linecap", "round"); p.setAttribute("stroke-linejoin", "round");
     loaderSvg.appendChild(p); const L = p.getTotalLength(); p.style.strokeDasharray = L; p.style.strokeDashoffset = L; return p;
   });
   const fmtTC = f => [Math.floor(f / 86400) % 24, Math.floor(f / 1440) % 60, Math.floor(f / 24) % 60, f % 24].map(v => String(v).padStart(2, "0")).join(":");

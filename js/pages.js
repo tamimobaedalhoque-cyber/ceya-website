@@ -16,7 +16,8 @@
   const pad = n => String(n).padStart(2, "0");
   const fmtTC = f => `${pad(Math.floor(f / 86400))}:${pad(Math.floor(f / 1440) % 60)}:${pad(Math.floor(f / 24) % 60)}:${pad(f % 24)}`;
   const svgEl = (tag, attrs = {}) => { const e = document.createElementNS("http://www.w3.org/2000/svg", tag); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; };
-  const ringD = i => { const t = i / 7; return E.ringPath(500, 480 * (1 - t * 0.8), 0.95 * Math.pow(t, 1.6), i < 2 ? 0.3 : 0); };
+  // The real symbol (engine.js): ringD is a ring's true centre line, W its true weight, FILL its exact shape.
+  const ringD = i => E.markLine(i), W = i => E.MARK.w[i], FILL = i => E.MARK.fill[i];
   // Arabic pages read right to left and carry their own words; tr() picks the right one.
   const AR = root.lang === "ar", RTL = root.dir === "rtl";
   const tr = (en, ar) => (AR ? ar : en);
@@ -46,7 +47,7 @@
     // Layers: Concept, Story, Image, Sound, each tied to its ring.
     const LAYERS = [[tr("Concept", "الفكرة"), 0, "#F7B32B"], [tr("Story", "القصة"), 3, "#FC864F"], [tr("Image", "الصورة"), 4, "#FF6F61"], [tr("Sound", "الصوت"), 7, "#88D8B0"]];
     const rings = $("#p-rings");
-    for (let i = 0; i < 8; i++) rings.appendChild(svgEl("path", { d: ringD(i), fill: "none", stroke: SPECTRUM[i], "stroke-width": (7 - 3 * i / 7).toFixed(2), "stroke-linecap": "round", class: "pr", "data-i": i }));
+    for (let i = 0; i < 8; i++) rings.appendChild(svgEl("path", { d: FILL(i), fill: SPECTRUM[i], class: "pr", "data-i": i }));
     $("#p-layers-index").innerHTML = LAYERS.map(([n, , c]) => `<li style="--c:${c}">${n}</li>`).join("");
     $("#p-layers-body").innerHTML = LAYERS.map(([n, , c], i) => `<article class="pl" style="--c:${c}"><span class="pl-no">${tr("Layer", "الطبقة")} ${pad(i + 1)}</span><h3>${n}</h3><p>${film.layers[i]}</p></article>`).join("");
     // Stills: variations of the film's pattern, numbered like frames.
@@ -67,8 +68,8 @@
     $("#p-next-meta").textContent = `${next.format}${tr(", ", "، ")}${next.year}`;
     $("#p-next").style.setProperty("--na", next.a); $("#p-next").style.setProperty("--nb", next.b);
     const nr = $("#p-next-ring");
-    nr.appendChild(svgEl("path", { d: ringD(0), fill: "none", stroke: "rgba(255,255,255,.12)", "stroke-width": 4 }));
-    nr.appendChild(svgEl("path", { d: ringD(0), fill: "none", stroke: next.a, "stroke-width": 7, "stroke-linecap": "round", id: "p-next-draw", pathLength: 1, "stroke-dasharray": "1 1", "stroke-dashoffset": 1 }));
+    nr.appendChild(svgEl("path", { d: FILL(0), fill: "rgba(255,255,255,.12)" }));
+    nr.appendChild(svgEl("path", { d: ringD(0), fill: "none", stroke: next.a, "stroke-width": W(0), "stroke-linecap": "round", id: "p-next-draw", pathLength: 1, "stroke-dasharray": "1 1", "stroke-dashoffset": 1 }));
   }
 
   /* ---------- Split text ---------- */
@@ -222,15 +223,14 @@
       });
     };
     tick(); setInterval(tick, 1000);
-    $$(".s-glyph").forEach(sv => { const i = +sv.dataset.ring; for (let k = 0; k <= 7; k++) sv.appendChild(svgEl("path", { d: ringD(k), fill: "none", stroke: k === i ? "currentColor" : "rgba(255,255,255,.14)", "stroke-width": k === i ? 26 : 10, "stroke-linecap": "round" })); });
+    $$(".s-glyph").forEach(sv => { const i = +sv.dataset.ring; for (let k = 0; k <= 7; k++) sv.appendChild(svgEl("path", { d: FILL(k), fill: k === i ? "currentColor" : "rgba(255,255,255,.22)" })); });
     $$(".s-crew-list li").forEach((li, i) => li.addEventListener("mouseenter", () => S.instrument(i, pos(li).x)));
   }
 
   /* ---------- Brief: every answered question closes another ring ---------- */
   if (page === "contact") {
     const form = $("#brief"), svg = $("#brief-rings"), count = $("#brief-count"), status = $("#brief-status");
-    const paths = Array.from({ length: 8 }, (_, i) => { const p = svgEl("path", { d: ringD(i), fill: "none", stroke: SPECTRUM[i], "stroke-width": (8 - 3 * i / 7).toFixed(2), "stroke-linecap": "round", pathLength: 1, "stroke-dasharray": "1 1", "stroke-dashoffset": 1 }); svg.appendChild(svgEl("path", { d: ringD(i), fill: "none", stroke: "rgba(255,255,255,.1)", "stroke-width": 3 })); svg.appendChild(p); return p; });
-    const play = svgEl("path", { d: "M440 410 L600 500 L440 590 Z", fill: "rgba(255,255,255,.14)", class: "brief-play" }); svg.appendChild(play);
+    const paths = Array.from({ length: 8 }, (_, i) => { const p = svgEl("path", { d: ringD(i), fill: "none", stroke: SPECTRUM[i], "stroke-width": W(i), "stroke-linecap": "round", "stroke-linejoin": "round", pathLength: 1, "stroke-dasharray": "1 1", "stroke-dashoffset": 1 }); svg.appendChild(svgEl("path", { d: FILL(i), fill: "rgba(255,255,255,.12)" })); svg.appendChild(p); return p; });
     const qs = $$(".q", form);
     const answered = q => { const i = +q.dataset.q; if (i <= 3) return !!$("input:checked", q); if (i === 4) return !!form.name.value.trim() && /\S+@\S+\.\S+/.test(form.email.value); return form.idea.value.trim().length > 8; };
     let lastLit = 0;
@@ -241,7 +241,6 @@
       if (lit > lastLit) for (let i = lastLit; i < lit; i++) setTimeout(() => S.instrument(i, 0.75), (i - lastLit) * 90);
       lastLit = lit;
       count.textContent = tr(`${done} of ${qs.length} answered`, `أُجيب عن ${done} من ${qs.length}`);
-      play.setAttribute("fill", done === qs.length ? "#88D8B0" : "rgba(255,255,255,.14)");
     };
     form.addEventListener("input", update); form.addEventListener("change", update); update();
     form.addEventListener("submit", e => {
